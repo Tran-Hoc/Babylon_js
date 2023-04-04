@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Chess</title>
+
+    <style>
+        html,
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+    </style>
+
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+</head>
+
+<body>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <!-- touch-action="none" for best results from PEP -->
+
+    <script>
+        const canvas = document.getElementById("renderCanvas"); // Get the canvas element
+        const engine = new BABYLON.Engine(canvas, true); // Generate the BABYLON 3D engine
+
+        // Add your code here matching the playground format
+        const createScene = function () {
+            const scene = new BABYLON.Scene(engine);
+
+            // const camera = new BABYLON.ArcRotateCamera("Camera", -Math.PI / 2, Math.PI / 4, 15, BABYLON.Vector3.Zero());
+            // camera.attachControl(canvas, true);
+            const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 4, 20, new BABYLON.Vector3(0, 0, 0));
+            //camera.attachControl(canvas, true);
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
+
+            var grid = {
+                'h': 8,
+                'w': 8
+            };
+            const tiledGround = new BABYLON.MeshBuilder.CreateTiledGround("Tiled Ground", { xmin: -3, zmin: -3, xmax: 3, zmax: 3, subdivisions: grid });
+
+
+            // box 
+            const box = BABYLON.MeshBuilder.CreateBox("box", { height: 0.5, width: 0.5, depth: 0.5 }, scene);
+            box.position.y = 0.25;
+            box.position.x = 1.1;
+            box.position.z = 1.1;
+
+            let boxMaterial = new BABYLON.StandardMaterial("boxMaterial", scene);
+            boxMaterial.diffuseColor = new BABYLON.Color3(0.3, 1, 0);
+            box.material = boxMaterial;
+            const box1 = BABYLON.MeshBuilder.CreateBox("box", { height: 0.5, width: 0.5, depth: 0.5 }, scene);
+            box1.position.y = 0.25;
+            box1.position.x = - 1.1;
+            box1.position.z = - 1.1;
+
+            let boxMaterial1 = new BABYLON.StandardMaterial("boxMaterial", scene);
+            boxMaterial1.diffuseColor = new BABYLON.Color3(0.3, 0.2, 0.9);
+            box1.material = boxMaterial1;
+
+
+            // let camera = new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(0, 10, -10), scene);
+            // // camera.target = box;
+            // camera.radius = 10;
+            // camera.heightOffset = 5;
+            // camera.rotationOffset = 0;
+            // camera.cameraAcceleration = 0.05;
+            // camera.maxCameraSpeed = 20;
+
+            //Create the multi material
+            //Create differents materials
+            const whiteMaterial = new BABYLON.StandardMaterial("White");
+            whiteMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
+
+            const blackMaterial = new BABYLON.StandardMaterial("Black");
+            blackMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+
+            // Create Multi Material
+            const multimat = new BABYLON.MultiMaterial("multi", scene);
+            multimat.subMaterials.push(whiteMaterial);
+            multimat.subMaterials.push(blackMaterial);
+
+
+            // Apply the multi material
+            // Define multimat as material of the tiled ground
+            tiledGround.material = multimat;
+
+            // Needed variables to set subMeshes
+            const verticesCount = tiledGround.getTotalVertices();
+            const tileIndicesLength = tiledGround.getIndices().length / (grid.w * grid.h);
+
+            // Set subMeshes of the tiled ground
+            tiledGround.subMeshes = [];
+            let base = 0;
+            for (let row = 0; row < grid.h; row++) {
+                for (let col = 0; col < grid.w; col++) {
+                    tiledGround.subMeshes.push(new BABYLON.SubMesh(row % 2 ^ col % 2, 0, verticesCount, base, tileIndicesLength, tiledGround));
+                    base += tileIndicesLength;
+                }
+            }
+
+            console.log("" + tileIndicesLength);
+            const unitLength = tileIndicesLength / 3;
+
+
+            let box1z = box1.position.z;
+            let box1x = box1.position.x;
+
+            let boxz = box.position.z;
+            let boxx = box.position.x;
+
+            /// Player 2
+            document.addEventListener("keydown", function (event) {
+                box1z = box1.position.z;
+                box1x = box1.position.x;
+                switch (event.keyCode) {
+                    case 38:
+                        box1z += tileIndicesLength / 8;
+                        // if (box1z != boxz) {
+
+
+                        if (box1.position.z < unitLength) {
+                            box1.position.z = box1z
+                        }
+
+                        // }
+                        // console.log("z" + box1.position.z); // >3
+                        // console.log("x" + box1.position.x); // >3
+                        break;
+                    case 40:
+                        box1z -= tileIndicesLength / 8;
+                        //  if (box1z != boxz) {
+                        if (box1.position.z > -unitLength) {
+                            box1.position.z = box1z;
+                        }
+                        //  }
+                        // console.log("z" + box1.position.z); // -3
+                        // console.log("x" + box1.position.x); // 
+
+                        break;
+                    case 37: // left
+                        box1x -= tileIndicesLength / 8;
+                        // if (box1x != boxx) {
+                        if (box1.position.x > -unitLength) {
+
+                            box1.position.x = box1x;
+                        }
+                        // }
+                        // console.log("z" + box1.position.z); // -3
+                        // console.log("x" + box1.position.x); // -3
+
+                        break;
+                    case 39: //right    
+                        box1x += tileIndicesLength / 8;
+                        // console.log(box1x);
+                        //  if (box1x != boxx) {
+                        if (box1.position.x < unitLength) {
+
+                            box1.position.x = box1x;
+                        }
+                        // }
+
+                        // console.log("z" + box1.position.z); // 3
+                        console.log("x" + box1.position.x); // 3
+
+                        break;
+                }
+            });
+
+
+            // player 1
+            document.addEventListener("keydown", function (event) {
+                boxz = box.position.z;
+                boxx = box.position.x;
+
+                switch (event.keyCode) {
+
+                    case 87: //w
+                        if (box.position.z < unitLength) {
+
+                            box.position.z += tileIndicesLength / 8;
+                        }
+                        // console.log("z" + box.position.z); // >3
+                        // console.log("x" + box.position.x); // >3
+                        break;
+                    case 83: //s
+                        if (box.position.z > -unitLength) {
+
+                            box.position.z -= tileIndicesLength / 8;
+                        }
+                        // console.log("z" + box.position.z); // -3
+                        // console.log("x" + box.position.x); // 
+
+                        break;
+                    case 65: //a
+                        if (box.position.x > -unitLength) {
+
+                            box.position.x -= tileIndicesLength / 8;
+                        }
+                        // console.log("z" + box.position.z); // -3
+                        // console.log("x" + box.position.x); // -3
+
+                        break;
+                    case 68: //d
+                        if (box.position.x < unitLength) {
+
+                            box.position.x += tileIndicesLength / 8;
+                        }
+                        // console.log("z" + box.position.z); // 3
+                        // console.log("x" + box.position.x); // 3
+
+                        break;
+                }
+            }
+            )
+            return scene;
+        };
+
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
+
+        const scene = createScene(); //Call the createScene function
+
+        // Register a render loop to repeatedly render the scene
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
+
+        // Watch for browser/canvas resize events
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+
+</html>
