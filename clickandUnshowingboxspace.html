@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>BabylonJs - Ball/Ground Demo</title>
+    <script type="text/javascript" src="https://cdn.babylonjs.com/Oimo.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+    <style>
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script type="text/javascript">
+        let canvas = document.getElementById("renderCanvas");
+        let engine = new BABYLON.Engine(canvas, true);
+
+        let createScene = function () {
+            let scene = new BABYLON.Scene(engine);
+
+            let camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, new BABYLON.Vector3(0, 0, 15), scene);
+            camera.attachControl(canvas, true);
+
+            let light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
+            let light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 1, -1), scene);
+
+            let sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+            let ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 6, height: 6 }, scene);
+
+            // Enable action manager on the meshes
+            sphere.actionManager = new BABYLON.ActionManager(scene);
+            ground.actionManager = new BABYLON.ActionManager(scene);
+
+            let currentlySelectedMesh;
+
+            // When the sphere is clicked
+            sphere.actionManager.registerAction(
+                new BABYLON.ExecuteCodeAction(
+                    BABYLON.ActionManager.OnPickTrigger,
+                    function () {
+                        // Unshow the bounding box of the currently selected mesh
+                        if (currentlySelectedMesh) {
+                            currentlySelectedMesh.showBoundingBox = false;
+                        }
+                        // Show the bounding box of the newly selected mesh
+                        sphere.showBoundingBox = true;
+                        // Set the newly selected mesh as the currently selected mesh
+                        currentlySelectedMesh = sphere;
+                    }
+                )
+            );
+
+            // When the ground is clicked
+            ground.actionManager.registerAction(
+                new BABYLON.ExecuteCodeAction(
+                    BABYLON.ActionManager.OnPickTrigger,
+                    function () {
+                        // Unshow the bounding box of the currently selected mesh
+                        if (currentlySelectedMesh) {
+                            currentlySelectedMesh.showBoundingBox = false;
+                        }
+                        // Show the bounding box of the newly selected mesh
+                        ground.showBoundingBox = true;
+                        // Set the newly selected mesh as the currently selected mesh
+                        currentlySelectedMesh = ground;
+                    }
+                )
+            );
+
+            // Add action manager to the scene to unshow bounding box when clicking on empty space
+            scene.actionManager = new BABYLON.ActionManager(scene);
+            scene.actionManager.registerAction(
+
+                new BABYLON.ExecuteCodeAction(
+                    BABYLON.ActionManager.OnPickTrigger,
+                    function (evt) {
+                        console.log("click");
+                        // Check if the picked mesh is null (i.e. empty space was clicked)
+                        if (evt.meshUnderPointer === null) {
+                            // Unshow the bounding box of the currently selected mesh
+                            if (currentlySelectedMesh) {
+                                currentlySelectedMesh.showBoundingBox = false;
+                            }
+                        }
+                    }
+                )
+
+            );
+
+            scene.onPointerObservable.add((pointerInfo) => {
+                if (pointerInfo.type == BABYLON.PointerEventTypes.POINTERDOWN) {
+                    console.log("POINTER DOWN");
+                    if (currentlySelectedMesh) {
+                        currentlySelectedMesh.showBoundingBox = false;
+                        currentlySelectedMesh = false;
+                    }
+
+                }
+            });
+            return scene;
+        };
+
+        let scene = createScene();
+
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
+
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+
+</html>

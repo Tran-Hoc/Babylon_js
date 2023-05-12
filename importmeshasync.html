@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>Babylon.js sample code</title>
+
+    <!-- Babylon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+    <script src="https://cdn.babylonjs.com/ammo.js"></script>
+    <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+    <script src="https://cdn.babylonjs.com/cannon.js"></script>
+    <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+    <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+    <style>
+        html,
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #canvasZone {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
+
+        const createScene = async function () {
+            const scene = new BABYLON.Scene(engine);
+
+            // Create a camera
+            const camera = new BABYLON.ArcRotateCamera("camera", 0, 0, 0, new BABYLON.Vector3(30, 30, 30), scene);
+            camera.attachControl(canvas, true);
+            camera.setTarget(new BABYLON.Vector3(0, 0, 0));
+            // Create a light
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+
+            var ground = BABYLON.Mesh.CreateGround("ground1", 200, 200, 0, scene);
+            //create grid 
+            var grid = new BABYLON.GridMaterial("grid", scene);
+            grid.gridRatio = 10;
+            ground.material = grid;
+
+            // Create local axes
+            const localAxes = new BABYLON.AxesViewer(scene, 1);
+            localAxes.xAxis.parent = ground;
+            localAxes.yAxis.parent = ground;
+            localAxes.zAxis.parent = ground;
+
+            // Import the mesh
+            const result = await BABYLON.SceneLoader.ImportMeshAsync(null, "model/", "spheresAndbox.obj", scene, function (container) {
+                // container.meshes[0].material = new BABYLON.Color3(0.1, 0.1, 0.9);
+                // console.log("size: " +   container.meshes[0].getBoundingInfo().boundingBox.extendSize);
+            });
+            console.log("mesh await" + result);
+            result.meshes[0].position.z = 10;
+            console.log("size: " + result.meshes[0].getBoundingInfo().boundingBox.extendSize);
+            var importedMesh = result.meshes[0];
+            // Attach PointerDragBehavior to the imported mesh
+            const pointerDragBehavior = new BABYLON.PointerDragBehavior();
+            importedMesh.addBehavior(pointerDragBehavior);
+
+            // Show the bounding box when dragging
+            pointerDragBehavior.onDragStartObservable.add(() => {
+                importedMesh.showBoundingBox = true;
+                // importedMesh.material = new BABYLON.Color3(0.1, 0.1, 0.9);
+
+            });
+            pointerDragBehavior.onDragEndObservable.add(() => {
+                importedMesh.showBoundingBox = false;
+
+                // console.log(importedMesh.getBoundingInfo().boundingBox.extendSize.scale(2));
+                console.log("size: " + importedMesh.getBoundingInfo().boundingBox.extendSize);
+                importedMesh.position.y = 0;
+                // importedMesh.position.y = importedMesh.getBoundingInfo();
+                console.log("Position x " + importedMesh.position.x + ", y " + importedMesh.position.y + ", z " + importedMesh.position.z);
+            });
+
+            console.log(result.meshes[0].position.x);
+
+            // Load in a full screen GUI from the snippet server
+            let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("GUI", true, scene);
+            let loadedGUI = await advancedTexture.parseFromSnippetAsync("L91IFF#7");
+
+            let btnadd = advancedTexture.getControlByName("BtnAdd");
+            let btndelete = advancedTexture.getControlByName("BtnDelete");
+
+            var position = 1;
+            var meshss = [];
+
+            // Add an event listener to the button
+            btnadd.onPointerClickObservable.add(async () => {
+
+                var meshs;
+                // Import the mesh
+                const result = await BABYLON.SceneLoader.ImportMeshAsync(null, "model/", "spheresAndbox.obj", scene, function (container) {
+
+                });
+                meshs = result.meshes[0];
+                // Create a box
+                // var box = BABYLON.MeshBuilder.CreateBox("box", {}, scene);
+                console.log("not await " + meshs);
+                if (position != 1) {
+                    // box.position.y += position;
+                    meshs.position.x += position;
+                }
+                else {
+                    meshs.position.x += 1;
+                    // box.position.y += 1;
+
+                }
+                // position = box.position.y + 1;
+                position = meshs.position.x + 1;
+                meshss.push(meshs);
+                console.log("array mesh" + meshss);
+            });
+            console.log("array mesh" + meshss);
+
+            // Import the mesh
+            const meshsss = await BABYLON.SceneLoader.ImportMeshAsync(null, "model/", "spheresAndbox.obj", scene, function (container) {
+                // container.meshes[0].material = new BABYLON.Color3(0.1, 0.1, 0.9);
+                // console.log("size: " +   container.meshes[0].getBoundingInfo().boundingBox.extendSize);
+            });
+            console.log("mesh await" + meshsss);
+            meshsss.meshes[0].position.z = 10;
+            console.log("size: " + meshsss.meshes[0].getBoundingInfo().boundingBox.extendSize);
+            var importedMesh1 = meshsss.meshes[0];
+            importedMesh1.position.x = 3;
+            importedMesh1.position.z = 3;
+
+            // Attach PointerDragBehavior to the imported mesh
+            const pointerDragBehavior1 = new BABYLON.PointerDragBehavior();
+            importedMesh1.addBehavior(pointerDragBehavior1);
+
+            // Show the bounding box when dragging
+            pointerDragBehavior1.onDragStartObservable.add(() => {
+                importedMesh1.showBoundingBox = true;
+                // importedMesh.material = new BABYLON.Color3(0.1, 0.1, 0.9);
+
+            });
+            pointerDragBehavior1.onDragEndObservable.add(() => {
+                importedMesh1.showBoundingBox = false;
+
+                // console.log(importedMesh.getBoundingInfo().boundingBox.extendSize.scale(2));
+                console.log("size: " + importedMesh1.getBoundingInfo().boundingBox.extendSize);
+                importedMesh1.position.y = 0;
+                // importedMesh.position.y = importedMesh.getBoundingInfo();
+                console.log("Position x " + importedMesh1.position.x + ", y " + importedMesh1.position.y + ", z " + importedMesh1.position.z);
+            });
+
+            console.log(result.meshes[0].position.x);
+
+            let mesh1 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+            let mesh2 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+            let mesh3 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+            let mesh4 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+            let mesh5 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+
+            mesh1.position.x = 3;
+            mesh2.position.x = -3;
+            mesh3.position.x = 0;
+            mesh4.position.x = 9;
+
+            let meshes = [mesh1, mesh2, mesh3, mesh4, mesh5]; // Array of meshes
+            let currentlySelectedMesh;
+            //Materials
+            var unSelected = new BABYLON.StandardMaterial("unSelected", scene);
+            unSelected.diffuseColor = new BABYLON.Color3(0.7, 0.7, 0.7);
+            unSelected.alpha = 1;
+
+            var nowSelected = new BABYLON.StandardMaterial("nowSelected", scene);
+            nowSelected.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.9);
+            nowSelected.alpha = 1;
+
+            // Drag mesh
+            meshes.forEach(function (mesh, evt, pickResult) {
+                // Enable action manager on the mesh
+                mesh.actionManager = new BABYLON.ActionManager(scene);
+
+                // Create a pointer drag behavior
+                let pointerDragBehavior = new BABYLON.PointerDragBehavior();
+                // Attach the behavior to the mesh
+                mesh.addBehavior(pointerDragBehavior);
+                // Set options for the behavior
+                pointerDragBehavior.useObjectOrientationForDragging = false;
+                // Show the bounding box when dragging starts
+                pointerDragBehavior.onDragStartObservable.add(function () {
+                    // Unshow the bounding box of the currently selected mesh
+                    if (currentlySelectedMesh) {
+                        currentlySelectedMesh.showBoundingBox = false;
+                        currentlySelectedMesh.material = unSelected;
+                        console.log("begin x: " + currentlySelectedMesh.position.x);
+                        // console.log("y: " + currentlySelectedMesh.getBoundingInfo().boundingBox.)
+
+                        console.log("size: " + currentlySelectedMesh.getBoundingInfo().boundingBox.extendSize);
+                    }
+
+                    // console.log("after x: " + mesh.position.x);
+
+                    // Show the bounding box of the newly selected mesh
+                    mesh.showBoundingBox = true;
+
+                    // Set the newly selected mesh as the currently selected mesh
+                    currentlySelectedMesh = mesh;
+                    mesh.material = nowSelected;
+                });
+                // Unshow the bounding box when dragging ends
+                pointerDragBehavior.onDragEndObservable.add(function () {
+
+                    console.log("end x: " + mesh.position.x);
+
+                });
+            })
+
+            btndelete.onPointerClickObservable.add(() => {
+                console.log("Btn delete clicked");
+            });
+
+            // var WorldBuild = function (ground, groundShape, scene, shadowGen) {
+            //     var groundBody = new BABYLON.PhysicsBody(
+            //         ground,
+            //         BABYLON.PhysicsMotionType.STATIC,
+            //         false,
+            //         scene
+            //     );
+            //     var groundMaterial = { friction: 0.2, restitution: 0.3 };
+
+            //     groundShape.material = groundMaterial;
+            //     groundBody.shape = groundShape;
+            //     groundBody.setMassProperties({
+            //         mass: 0,
+            //     });
+
+            //     ground.receiveShadows = true;
+            //     shadowGen.addShadowCaster(ground);
+            // };
+
+            // var BoxWorld = function (scene, position, size, viewer, shadowGen) {
+            //     var name = "boxWorld_" + Date.now();
+            //     console.log("creating box world", name);
+            //     var ground = BABYLON.Mesh.CreateGround(name, size, size, 2, scene);
+            //     ground.position = position;
+            //     var groundShape = new BABYLON.PhysicsShapeBox(
+            //         new BABYLON.Vector3(0, 0, 0),
+            //         BABYLON.Quaternion.Identity(),
+            //         new BABYLON.Vector3(size, 0.1, size),
+            //         scene
+            //     );
+            //     WorldBuild(ground, groundShape, scene, shadowGen);
+            //     viewer.showBody(ground.physicsBody);
+            // };
+            // // body/shape on box
+            // BoxWorld(scene, new BABYLON.Vector3(0, 0, 0), 40, viewer, shadowGen);
+            // const instance = AddBody(
+            //     scene,
+            //     new BABYLON.Vector3(0, 10, 0),
+            //     shadowGen,
+            //     viewer
+            // );
+
+            return scene;
+        };
+
+        window.initFunction = async function () {
+
+            var asyncEngineCreation = async function () {
+                try {
+                    return createDefaultEngine();
+                } catch (e) {
+                    console.log("the available createEngine function failed. Creating the default engine instead");
+                    return createDefaultEngine();
+                }
+            }
+
+            window.engine = await asyncEngineCreation();
+            if (!engine) throw 'engine should not be null.';
+            startRenderLoop(engine, canvas);
+            window.scene = createScene();
+        };
+        initFunction().then(() => {
+            scene.then(returnedScene => { sceneToRender = returnedScene; });
+
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+
+</html>

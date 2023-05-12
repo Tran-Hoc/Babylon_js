@@ -1,0 +1,76 @@
+<html>
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+    <script src="https://cdn.babylonjs.com/ammo.js"></script>
+    <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+    <script src="https://cdn.babylonjs.com/cannon.js"></script>
+    <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+    <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+    <style>
+        body,
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+
+        var createScene = function () {
+            // Create basic world
+            const scene = new BABYLON.Scene(engine);
+
+            const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 3, 10, new BABYLON.Vector3(0, 0, 0));
+            camera.attachControl(canvas, true);
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
+
+            BABYLON.SceneLoader.LoadAssetContainer("model/robotarm.babylon", "", scene, function (container) {
+                // Add loaded file to the scene
+                container.addAllToScene();
+
+                // Scale and position the loaded model (First mesh loaded from gltf is the root node)
+                container.meshes[0].scaling.scaleInPlace(1)
+
+                // wrap in bounding box mesh to avoid picking perf hit
+                var gltfMesh = container.meshes[0]
+                var boundingBox = BABYLON.BoundingBoxGizmo.MakeNotPickableAndWrapInBoundingBox(gltfMesh)
+
+                // Create bounding box gizmo
+                var utilLayer = new BABYLON.UtilityLayerRenderer(scene)
+                utilLayer.utilityLayerScene.autoClearDepthAndStencil = false;
+                var gizmo = new BABYLON.BoundingBoxGizmo(BABYLON.Color3.FromHexString("#60f542"), utilLayer)
+                gizmo.attachedMesh = boundingBox;
+
+                // Create behaviors to drag and scale with pointers in VR
+                // var sixDofDragBehavior = new BABYLON.SixDofDragBehavior()
+                // boundingBox.addBehavior(sixDofDragBehavior)
+                // var multiPointerScaleBehavior = new BABYLON.MultiPointerScaleBehavior()
+                // boundingBox.addBehavior(multiPointerScaleBehavior)
+            });
+
+            return scene;
+        };
+        const sceneToRender = createScene();
+        engine.runRenderLoop(function () {
+            sceneToRender.render();
+        });
+    </script>
+</body>
+
+</html>

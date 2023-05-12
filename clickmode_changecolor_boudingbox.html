@@ -1,0 +1,220 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>BabylonJs - Ball/Ground Demo</title>
+    <script type="text/javascript" src="https://cdn.babylonjs.com/Oimo.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+    <style>
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script type="text/javascript">
+        let canvas = document.getElementById("renderCanvas");
+        let engine = new BABYLON.Engine(canvas, true);
+
+        let createScene = function () {
+            let scene = new BABYLON.Scene(engine);
+
+            let camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, new BABYLON.Vector3(0, 0, 15), scene);
+            camera.attachControl(canvas, true);
+
+            let light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
+            let light2 = new BABYLON.PointLight("light2", new BABYLON.Vector3(0, 1, -1), scene);
+
+            // let sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+            // let ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 6, height: 6 }, scene);
+
+            // // Enable action manager on the meshes
+            // sphere.actionManager = new BABYLON.ActionManager(scene);
+            // ground.actionManager = new BABYLON.ActionManager(scene);
+
+            // let currentlySelectedMesh;
+
+            // // When the sphere is clicked
+            // sphere.actionManager.registerAction(
+            //     new BABYLON.ExecuteCodeAction(
+            //         BABYLON.ActionManager.OnPickTrigger,
+            //         function () {
+            //             // Unshow the bounding box of the currently selected mesh
+            //             if (currentlySelectedMesh) {
+            //                 currentlySelectedMesh.showBoundingBox = false;
+            //             }
+            //             // Show the bounding box of the newly selected mesh
+            //             sphere.showBoundingBox = true;
+            //             // Set the newly selected mesh as the currently selected mesh
+            //             currentlySelectedMesh = sphere;
+            //         }
+            //     )
+            // );
+
+            // // When the ground is clicked
+            // ground.actionManager.registerAction(
+            //     new BABYLON.ExecuteCodeAction(
+            //         BABYLON.ActionManager.OnPickTrigger,
+            //         function () {
+            //             // Unshow the bounding box of the currently selected mesh
+            //             if (currentlySelectedMesh) {
+            //                 currentlySelectedMesh.showBoundingBox = false;
+            //             }
+            //             // Show the bounding box of the newly selected mesh
+            //             ground.showBoundingBox = true;
+            //             // Set the newly selected mesh as the currently selected mesh
+            //             currentlySelectedMesh = ground;
+            //         }
+            //     )
+            // );
+            let mesh1 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+            let mesh2 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+            let mesh3 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+            let mesh4 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+            let mesh5 = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 2 }, scene);
+
+            mesh1.position.x = 3;
+            mesh2.position.x = -3;
+            mesh3.position.x = 0;
+            mesh4.position.x = 9;
+
+            let meshes = [mesh1, mesh2, mesh3, mesh4, mesh5]; // Array of meshes
+            let currentlySelectedMesh;
+
+            //Materials
+            var unSelected = new BABYLON.StandardMaterial("unSelected", scene);
+            unSelected.diffuseColor = new BABYLON.Color3(0.7, 0.7, 0.7);
+            unSelected.alpha = 1;
+
+            var nowSelected = new BABYLON.StandardMaterial("nowSelected", scene);
+            nowSelected.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.9);
+            nowSelected.alpha = 1;
+
+            meshes.forEach(function (mesh, evt, pickResult) {
+                // Enable action manager on the mesh
+                mesh.actionManager = new BABYLON.ActionManager(scene);
+
+                // Create a pointer drag behavior
+                let pointerDragBehavior = new BABYLON.PointerDragBehavior();
+                // Attach the behavior to the mesh
+                mesh.addBehavior(pointerDragBehavior);
+                // Set options for the behavior
+                pointerDragBehavior.useObjectOrientationForDragging = false;
+                // Show the bounding box when dragging starts
+                // pointerDragBehavior.onDragStartObservable.add(function () {
+                //     mesh.showBoundingBox = true;
+                // });
+
+                // // Unshow the bounding box when dragging ends
+                // pointerDragBehavior.onDragEndObservable.add(function () {
+                //     mesh.showBoundingBox = false;
+                // });
+
+                // When the mesh is clicked
+                // mesh.actionManager.registerAction(
+                //     new BABYLON.ExecuteCodeAction(
+                //         BABYLON.ActionManager.OnPickTrigger,
+                //         function () {
+                //             // Unshow the bounding box of the currently selected mesh
+                //             if (currentlySelectedMesh) {
+                //                 currentlySelectedMesh.showBoundingBox = false;
+                //             }
+                //             // Show the bounding box of the newly selected mesh
+                //             mesh.showBoundingBox = true;
+                //             // Set the newly selected mesh as the currently selected mesh
+                //             currentlySelectedMesh = mesh;
+                //         }
+                //     )
+                // );
+
+                // Show the bounding box when dragging starts
+                pointerDragBehavior.onDragStartObservable.add(function () {
+                    // Unshow the bounding box of the currently selected mesh
+                    if (currentlySelectedMesh) {
+                        currentlySelectedMesh.showBoundingBox = false;
+                        currentlySelectedMesh.material = unSelected;
+                        console.log("begin x: " + currentlySelectedMesh.position.x);
+                        // console.log("y: " + currentlySelectedMesh.getBoundingInfo().boundingBox.)
+
+                        console.log("size: " + currentlySelectedMesh.getBoundingInfo().boundingBox.extendSize);
+                    }
+
+                    // console.log("after x: " + mesh.position.x);
+
+                    // Show the bounding box of the newly selected mesh
+                    mesh.showBoundingBox = true;
+
+                    // Set the newly selected mesh as the currently selected mesh
+                    currentlySelectedMesh = mesh;
+                    mesh.material = nowSelected;
+                });
+                // Unshow the bounding box when dragging ends
+                pointerDragBehavior.onDragEndObservable.add(function () {
+
+                    console.log("end x: " + mesh.position.x);
+
+                });
+
+            });
+            // scene.actionManager = new BABYLON.ActionManager(scene);
+            // scene.actionManager.registerAction(
+            //     new BABYLON.ExecuteCodeAction(
+            //         BABYLON.ActionManager.OnPickTrigger,
+            //         function (evt) {
+            //             // Check if the picked mesh is null (i.e. empty space was clicked)
+            //             if (evt.meshUnderPointer === null) {
+            //                 // Unshow the bounding box of the currently selected mesh
+            //                 if (currentlySelectedMesh) {
+            //                     currentlySelectedMesh.showBoundingBox = false;
+            //                 }
+            //             }
+            //         }
+            //     )
+            // );
+
+            // Show the bounding box when the mouse button is clicked down on a mesh
+            scene.onPointerDown = function (evt, pickResult) {
+                if (pickResult.hit && meshes.includes(pickResult.pickedMesh)) {
+                    pickResult.pickedMesh.showBoundingBox = true;
+                }
+                //  Check if the picked mesh is null (i.e. empty space was clicked)
+                if (evt.meshUnderPointer === null) {
+                    // Unshow the bounding box of the currently selected mesh
+                    if (currentlySelectedMesh) {
+                        currentlySelectedMesh.showBoundingBox = false;
+                    }
+                }
+            };
+            
+            // scene.onPointerObservable.add((pointerInfo) => {
+            //     if (pointerInfo.type == BABYLON.PointerEventTypes.POINTERDOWN) {
+            //         console.log("POINTER DOWN");
+            //         if (currentlySelectedMesh ) {
+            //             currentlySelectedMesh.showBoundingBox = false;
+            //             currentlySelectedMesh = false;
+            //         }
+
+            //     }
+            // });
+
+            return scene;
+        };
+
+        let scene = createScene();
+
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
+
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+
+</html>

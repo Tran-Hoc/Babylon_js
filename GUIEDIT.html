@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>Babylon.js sample code</title>
+
+    <!-- Babylon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+    <script src="https://cdn.babylonjs.com/ammo.js"></script>
+    <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+    <script src="https://cdn.babylonjs.com/cannon.js"></script>
+    <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+    <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+    <style>
+        html,
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #canvasZone {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
+        var createScene = async function () {
+            var scene = new BABYLON.Scene(engine);
+
+            //Adding a light
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
+
+            //Adding an Arc Rotate Camera
+            var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0.8, 100, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, false);
+            var skull;
+            var skullMaterial = new BABYLON.StandardMaterial("skullmat", scene);
+            // The first parameter can be used to specify which mesh to import. Here we import all meshes
+            BABYLON.SceneLoader.ImportMesh("", "/model/", "boxandringandrobot.babylon", scene, function (newMeshes) {
+                // Set the target of the camera to the first imported mesh
+                camera.target = newMeshes[0];
+                var scaling = 3;
+                newMeshes[0].scaling.x = scaling;
+                newMeshes[0].scaling.y = scaling;
+                newMeshes[0].scaling.z = scaling;
+
+                skull = newMeshes[0];
+
+                skull.material = skullMaterial;
+            });
+            // Import the mesh
+            const result = await BABYLON.SceneLoader.ImportMeshAsync(null, "model/", "spheresAndbox.obj", scene, function (container) {
+                // container.meshes[0].material = new BABYLON.Color3(0.1, 0.1, 0.9);
+                // console.log("size: " +   container.meshes[0].getBoundingInfo().boundingBox.extendSize);
+
+            });
+            result.meshes[0].position.z = 10;
+            // Move the light with the camera
+            scene.registerBeforeRender(function () {
+                light.position = camera.position;
+            });
+
+            // Load in a full screen GUI from the snippet server
+            let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("GUI", true, scene);
+            let loadedGUI = await advancedTexture.parseFromSnippetAsync("D04P4Z#105");
+
+            // Get controls by name
+            let sliderX = advancedTexture.getControlByName("RotationXSlider");
+            let sliderY = advancedTexture.getControlByName("RotationYSlider");
+            let sliderZ = advancedTexture.getControlByName("RotationZSlider");
+            let matPicker = advancedTexture.getControlByName("MatColor");
+            let specPicker = advancedTexture.getControlByName("SpecColor");
+            let button = advancedTexture.getControlByName("Button");
+            // Add observables to change the rotation
+            sliderX.onValueChangedObservable.add(function (value) {
+                if (skull) {
+                    skull.rotation.x = value;
+                    // skull.position.x = value;
+                    console.log(skull.position.x)
+                }
+            });
+
+            sliderY.onValueChangedObservable.add(function (value) {
+                if (skull) {
+                    skull.rotation.y = value;
+
+                }
+            });
+
+            sliderZ.onValueChangedObservable.add(function (value) {
+                if (skull) {
+                    skull.rotation.z = value;
+                }
+            });
+
+            // Add observables to change the color
+            matPicker.onValueChangedObservable.add(function (value) { // value is a color3
+                skullMaterial.diffuseColor.copyFrom(value);
+            });
+
+            specPicker.onValueChangedObservable.add(function (value) {
+                skullMaterial.specularColor.copyFrom(value);
+            });
+            button.onPointerClickObservable.add( () => {  
+                console.log("button");
+
+            });
+            // Load in a full screen GUI from the snippet server
+            // let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("GUI", true, scene);
+            // let loadedGUI = await advancedTexture.parseFromSnippetAsync("L91IFF#5");
+
+            // let btnadd = advancedTexture.getControlByName("BtnAdd");
+            // let btndelete = advancedTexture.getControlByName("BtnDelete");
+
+            // btnadd.onValueChangedObservable.add(function (value) {
+            //     console.log("Btn Add clicked");
+            // });
+
+            // btndelete.onValueChangedObservable.add(function (value) {
+            //     console.log("Btn delete clicked");
+
+            // });
+            return scene;
+        }
+        window.initFunction = async function () {
+
+            var asyncEngineCreation = async function () {
+                try {
+                    return createDefaultEngine();
+                } catch (e) {
+                    console.log("the available createEngine function failed. Creating the default engine instead");
+                    return createDefaultEngine();
+                }
+            }
+
+            window.engine = await asyncEngineCreation();
+            if (!engine) throw 'engine should not be null.';
+            startRenderLoop(engine, canvas);
+            window.scene = createScene();
+        };
+        initFunction().then(() => {
+            scene.then(returnedScene => { sceneToRender = returnedScene; });
+
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+
+</html>

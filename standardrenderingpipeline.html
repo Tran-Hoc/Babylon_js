@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>BabylonJs - Basic Element-Creating Scene</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+    <style>
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script type="text/javascript">
+        var canvas = document.getElementById("renderCanvas");
+        var engine = new BABYLON.Engine(canvas, true);
+
+        var createScene = function () {
+            var scene = new BABYLON.Scene(engine);
+            var camera = new BABYLON.ArcRotateCamera("Camera", -Math.PI / 4, Math.PI / 2.5, 200, BABYLON.Vector3.Zero(), scene);
+            camera.attachControl(canvas, true);
+            camera.minZ = 0.1;
+
+            // Light
+            new BABYLON.PointLight("point", new BABYLON.Vector3(0, 40, 0), scene);
+
+            // // Environment Texture
+            // var hdrTexture = new BABYLON.HDRCubeTexture("skybox/    .hdr", scene, 512);
+
+
+            // Skybox
+            var skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, scene);
+            var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+            skyboxMaterial.backFaceCulling = false;
+            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("skybox/mountain", scene);
+            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+            skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+            skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+            skybox.material = skyboxMaterial;
+
+            // Skybox
+            var hdrSkybox = BABYLON.Mesh.CreateBox("hdrSkyBox", 1000.0, scene);
+            var hdrSkyboxMaterial = new BABYLON.PBRMaterial("skyBox", scene);
+            hdrSkyboxMaterial.backFaceCulling = false;
+            hdrSkyboxMaterial.reflectionTexture = hdrTexture.clone();
+            hdrSkyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+            hdrSkyboxMaterial.microSurface = 1.0;
+            hdrSkyboxMaterial.cameraExposure = 0.6;
+            hdrSkyboxMaterial.cameraContrast = 1.6;
+            hdrSkyboxMaterial.disableLighting = true;
+            hdrSkybox.material = hdrSkyboxMaterial;
+            hdrSkybox.infiniteDistance = true;
+
+            // Create mesh
+            var woodbox = BABYLON.MeshBuilder.CreateBox("plane", {
+                width: 40,
+                height: 50,
+                depth: 65
+            }, scene);
+
+            var wood = new BABYLON.PBRMaterial("wood", scene);
+            wood.reflectionTexture = hdrTexture;
+            wood.directIntensity = 1.5;
+            wood.environmentIntensity = 0.5;
+            wood.specularIntensity = 0.3;
+            wood.cameraExposure = 0.9;
+            wood.cameraContrast = 1.6;
+
+            wood.reflectivityTexture = new BABYLON.Texture("image/reflectivity.png", scene);
+            wood.useMicroSurfaceFromReflectivityMapAlpha = true;
+
+            wood.albedoColor = BABYLON.Color3.White();
+            wood.albedoTexture = new BABYLON.Texture("image/albedo.png", scene);
+            woodbox.material = wood;
+
+            // Create rendering pipeline
+            var pipeline = new BABYLON.StandardRenderingPipeline("standard", scene, 1.0 / devicePixelRatio, null, [camera]);
+            pipeline.lensTexture = new BABYLON.Texture("image/lensdirt.jpg", scene);
+
+            // Return scene
+            return scene;
+        };
+        var scene = createScene();
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
+    </script>
+</body>
+
+</html>

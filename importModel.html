@@ -1,0 +1,148 @@
+<html>
+
+<head>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+    <script src="https://cdn.babylonjs.com/ammo.js"></script>
+    <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+    <script src="https://cdn.babylonjs.com/cannon.js"></script>
+    <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+    <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <style>
+        body,
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("renderCanvas");
+        const engine = new BABYLON.Engine(canvas, true);
+
+        const createScene = function () {
+
+            const scene = new BABYLON.Scene(engine);
+
+            const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 3, 25, new BABYLON.Vector3(0, 0, 0));
+            camera.attachControl(canvas, true);
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
+
+            var robot;
+            // Create a pointer drag behavior
+            let pointerDragBehavior;
+            // const model = BABYLON.SceneLoader.ImportMeshAsync("", "model/", "boxbox.glb").then((result) => {
+
+            //     result.meshes[0].position.x = 0;
+            //     var scaling = 0.2;
+            //     result.meshes[0].scaling.x = scaling;
+            //     result.meshes[0].scaling.y = scaling;
+            //     result.meshes[0].scaling.z = scaling;
+            //     result.meshes[0].position.x = 0;
+            //     robot = result.meshes[0];
+
+            //     console.log(result.meshes.length);
+            //     console.log(robot.position.x);
+
+            //     pointerDragBehavior = new BABYLON.PointerDragBehavior();
+
+            //     result.meshes[0].actionManager = new BABYLON.ActionManager(scene);
+            //     // Attach the behavior to the mesh
+            //     result.meshes[0].addBehavior(pointerDragBehavior);
+            //     // Set options for the behavior
+            //     pointerDragBehavior.useObjectOrientationForDragging = false;
+
+            // });
+            // console.log(robot.position.x);
+            // Import gltf model\
+            var gltfMesh;
+            // const con = BABYLON.SceneLoader.ImportMesh('', "https://raw.githubusercontent.com/PatrickRyanMS/SampleModels/master/Yeti/glTF/Yeti_IdleUnity.gltf", "", scene, function (container) {
+
+            //     //   gltfMesh = container.meshes[0];
+            // });
+            const model = BABYLON.SceneLoader.ImportMesh('', "model/boxbox.glb", "", scene, function (container) {
+
+                   gltfMesh = container.meshes[0];
+                   console.log("status " + gltfMesh);
+            });
+            console.log(gltfMesh);
+            // Create gizmo
+            // var gizmo = new BABYLON.BoundingBoxGizmo(BABYLON.Color3.FromHexString("#0984e3"))
+            // gizmo.ignoreChildren = true;
+            // var bb = BABYLON.BoundingBoxGizmo.MakeNotPickableAndWrapInBoundingBox(gltfMesh)
+
+            // gizmo.attachedMesh = bb;
+            // // Import the mesh
+            // const result = BABYLON.SceneLoader.ImportMesh("", "model/", "boxandring.babylon", scene);
+            // console.log(result.length);
+            // const importedMesh = result.meshes[0];
+
+            // Attach ActionManager to the imported mesh
+            // importedMesh.actionManager = new BABYLON.ActionManager(scene);
+
+            // // Register an action
+            // importedMesh.actionManager.registerAction(
+            //     new BABYLON.ExecuteCodeAction(
+            //         BABYLON.ActionManager.OnPickTrigger,
+            //         function () {
+            //             console.log("x: " + importedMesh.position.x + ", y: " + importedMesh.position.y);
+            //         }
+            //     )
+            // );
+
+            // console.log(robot());
+            // model.scaling = new BABYLON.Vector3 (0.3,0.3,0.3);X
+
+            // var box = new BABYLON.Mesh.CreateBox("box", 1.0, scene);
+            // var boxGizmo = new BABYLON.BoundingBoxGizmo(new BABYLON.Color3(1, 1, 1), model);
+            // boxGizmo.updateBoundingBox();
+            // console.log(boxGizmo.boundingBox.minimum);
+            // console.log(boxGizmo.boundin gBox.maximum);
+
+            // Show the bounding box when dragging starts
+            // pointerDragBehavior.onDragStartObservable.add(function () {
+            //     // Unshow the bounding box of the currently selected mesh
+            //     if (currentlySelectedMesh) {
+            //         currentlySelectedMesh.showBoundingBox = false;
+            //         currentlySelectedMesh.material = unSelected;
+            //         console.log("begin x: " + currentlySelectedMesh.position.x);
+            //     }
+
+            //     // console.log("after x: " + mesh.position.x);
+
+            //     // Show the bounding box of the newly selected mesh
+            //     mesh.showBoundingBox = true;
+
+            //     // Set the newly selected mesh as the currently selected mesh
+            //     currentlySelectedMesh = mesh;
+            //     mesh.material = nowSelected;
+            // });
+            // // Unshow the bounding box when dragging ends
+            // pointerDragBehavior.onDragEndObservable.add(function () {
+
+            //     console.log("end x: " + mesh.position.x);
+
+            // });
+
+            return scene;
+        };
+
+        const sceneToRender = createScene();
+        engine.runRenderLoop(function () {
+            sceneToRender.render();
+        });
+    </script>
+</body>
+
+</html>

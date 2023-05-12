@@ -48,10 +48,10 @@
             const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(3, 1, 0));
 
             // Load the sound and play it automatically once ready 
-            // const music = new BABYLON.Sound("mucis", "Chris Medina - What Are Words (Official Video) (320 kbps).mp3", scene, null, { loop: true, autoplay: true });
-            const sound = new BABYLON.Sound("sound", "Chris Medina - What Are Words (Official Video) (320 kbps).mp3", scene);
-            //Leave time for the sound file to load before playing it
-            setInterval(() => sound.play(), 3000);
+            const music = new BABYLON.Sound("mucis", "Chris Medina - What Are Words (Official Video) (320 kbps).mp3", scene, null, { loop: true, autoplay: true });
+            // const sound = new BABYLON.Sound("sound", "Chris Medina - What Are Words (Official Video) (320 kbps).mp3", scene);
+            // //Leave time for the sound file to load before playing it
+            // setInterval(() => sound.play(), 3000);
             return scene;
         };
 
