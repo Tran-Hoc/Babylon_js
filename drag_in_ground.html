@@ -43,7 +43,6 @@
             width: 100%;
             height: 100%;
         }
-
         #fps {
             position: absolute;
             background-color: black;
@@ -60,12 +59,11 @@
 </head>
 
 <body>
-    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
     <div id="fps">0</div>
+    
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
     <script>
-
-        let divFps = document.getElementById("fps");
-
+             let divFps = document.getElementById("fps");
         var canvas = document.getElementById("renderCanvas");
 
         var startRenderLoop = function (engine, canvas) {
@@ -73,7 +71,7 @@
                 if (sceneToRender && sceneToRender.activeCamera) {
                     sceneToRender.render();
                     const fps = engine.getFps().toFixed();
-                    divFps.innerHTML = `${fps} FPS`;
+                    divFps.innerHTML =`${fps} FPS`;
                 }
             });
         }
@@ -82,42 +80,81 @@
         var scene = null;
         var sceneToRender = null;
         var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
-
-        const createScene = async function () {
-            const scene = new BABYLON.Scene(engine);
-
-            // Create a camera
-            const camera = new BABYLON.ArcRotateCamera("camera", 0, 0, 0, new BABYLON.Vector3(30, 30, 30), scene);
+        var createScene = function () {
+            var scene = new BABYLON.Scene(engine);
+            var camera = new BABYLON.ArcRotateCamera("Camera", 0, 0, 10, new BABYLON.Vector3(0, 0, 0), scene);
+            camera.setPosition(new BABYLON.Vector3(20, 200, 400));
             camera.attachControl(canvas, true);
-            camera.setTarget(new BABYLON.Vector3(0, 0, 0));
-            // Create a light
-            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
-            var ground = BABYLON.Mesh.CreateGround("ground1", 200, 200, 0, scene);
-            //create grid 
-            var grid = new BABYLON.GridMaterial("grid", scene);
-            grid.gridRatio = 10;
-            ground.material = grid;
+            camera.upperBetaLimit = (Math.PI / 2) * 0.99;
 
-            // Create local axes
-            const localAxes = new BABYLON.AxesViewer(scene, 1);
-            localAxes.xAxis.parent = ground;
-            localAxes.yAxis.parent = ground;
-            localAxes.zAxis.parent = ground;
+            // Light
+            var light = new BABYLON.PointLight("omni", new BABYLON.Vector3(50, 200, 0), scene);
 
-            // Load in a full screen GUI from the snippet server
-            let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("GUI", true, scene);
-            let loadedGUI = await advancedTexture.parseFromSnippetAsync("L91IFF#28");
-            advancedTexture.idealWidth = 1920;
-            advancedTexture.idealHeight = 1080;
 
-            let btnadd = advancedTexture.getControlByName("BtnAdd");
-            let btndelete = advancedTexture.getControlByName("BtnDelete");
-            let btnTransparent = advancedTexture.getControlByName("BtnTransparent");
+            var redMat = new BABYLON.StandardMaterial("ground", scene);
+            redMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+            redMat.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+            redMat.emissiveColor = BABYLON.Color3.Red();
+
+            var greenMat = new BABYLON.StandardMaterial("ground", scene);
+            greenMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+            greenMat.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+            greenMat.emissiveColor = BABYLON.Color3.Green();
+            greenMat.wireframe = true;
+            var blueMat = new BABYLON.StandardMaterial("ground", scene);
+            blueMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+            blueMat.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+            blueMat.emissiveColor = BABYLON.Color3.Blue();
+
+            var purpleMat = new BABYLON.StandardMaterial("ground", scene);
+            purpleMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+            purpleMat.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+            purpleMat.emissiveColor = BABYLON.Color3.Purple();
+
+            /*************************************Meshes****************************************/
+
+            var groundMaterial = new BABYLON.GridMaterial("groundMaterial", scene);
+            groundMaterial.majorUnitFrequency = 5;
+            groundMaterial.minorUnitVisibility = 0.5;
+            groundMaterial.gridRatio = 2;
+            groundMaterial.backFaceCulling = false;
+            groundMaterial.mainColor = new BABYLON.Color3(0.07, 0.5, 0.03);
+            groundMaterial.lineColor = new BABYLON.Color3(0.15, 0.52, 0.52);
+            groundMaterial.opacity = 0.98;
+            // Ground
+            var ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 1000, height: 1000 }, scene, false);
+            ground.material = groundMaterial;
+
+            // Meshes
+            var redSphere = BABYLON.MeshBuilder.CreateSphere("red", { diameter: 20 }, scene);
+            redSphere.material = redMat;
+            redSphere.position.y = 10;
+            redSphere.position.x -= 100;
+
+            var greenBox = BABYLON.MeshBuilder.CreateBox("green", { size: 20 }, scene);
+            greenBox.material = greenMat;
+            greenBox.position.z -= 100;
+            greenBox.position.y = 10;
+
+            var blueBox = BABYLON.MeshBuilder.CreateBox("blue", { size: 20 }, scene);
+            blueBox.material = blueMat;
+            blueBox.position.x += 100;
+            blueBox.position.y = 10;
+
+            var purpleDonut = BABYLON.MeshBuilder.CreateTorus("red", { diameter: 30, thickness: 10 }, scene);
+            purpleDonut.material = purpleMat;
+            purpleDonut.position.y = 10;
+            purpleDonut.position.z += 100;
+
+            var purpleDonut1 = BABYLON.MeshBuilder.CreateTorus("red", { diameter: 30, thickness: 10 }, scene);
+            purpleDonut1.material = blueMat;
+            purpleDonut1.position.y = 10;
+            purpleDonut1.position.z += 200;
 
             var startingPoint;
             var currentMesh;
-            var outline;
+
             var getGroundPosition = function () {
                 var pickinfo = scene.pick(scene.pointerX, scene.pointerY, function (mesh) { return mesh == ground; });
                 if (pickinfo.hit) {
@@ -126,22 +163,15 @@
 
                 return null;
             }
-            var pointerDown = function (mesh) {
-                if (currentMesh) {
-                    // currentMesh.material.wireframe = false;
-                    // outline
-                    outline = currentMesh;
-                    outline.renderOutline = false;
-                }
 
+            var pointerDown = function (mesh) {
                 currentMesh = mesh;
-                // currentMesh.material.wireframe = true;
+                currentMesh.material.wireframe = true;
                 // outline
-                outline = currentMesh;
-                outline.outlineWidth = 0.2;
+                var outline = currentMesh;
+                outline.outlineWidth = 0.6;
                 outline.outlineColor = BABYLON.Color3.Green();
                 outline.renderOutline = true;
-
                 startingPoint = getGroundPosition();
 
                 if (startingPoint) { // we need to disconnect camera from canvas
@@ -150,15 +180,15 @@
                     }, 0);
 
                 }
-
             }
+
             var pointerUp = function () {
                 if (startingPoint) {
-                    // currentMesh.material.wireframe = false;
+                    currentMesh.material.wireframe = false;
 
-                    // // outline
-                    // outline = currentMesh;
-                    // outline.renderOutline = false;
+                    // outline
+                    var outline = currentMesh;
+                    outline.renderOutline = false;
                     camera.attachControl(canvas, true);
                     startingPoint = null;
                     return;
@@ -179,10 +209,10 @@
                 startingPoint = current;
 
             }
+
             scene.onPointerObservable.add((pointerInfo) => {
                 switch (pointerInfo.type) {
                     case BABYLON.PointerEventTypes.POINTERDOWN:
-
                         if (pointerInfo.pickInfo.hit && pointerInfo.pickInfo.pickedMesh != ground) {
                             pointerDown(pointerInfo.pickInfo.pickedMesh)
                         }
@@ -196,58 +226,12 @@
                 }
             });
 
-            var position = 1;
-            var meshs;
-            var meshes = [];
-            // Add an event listener to the button
-            btnadd.onPointerClickObservable.add(async () => {
-                // Import the mesh
-                for (var i = 0; i < 10; i++) {
-                    const result = await BABYLON.SceneLoader.ImportMeshAsync(null, "model/", "spheresAndbox.obj", scene, function (container) {
-                        // newMeshes[0].getChildMeshes()[0].metadata = "cannon";
-                    });
-                    meshs = result.meshes[0];
-                    if (position != 1) {
-                        meshs.position.x += position;
-                    }
-                    else {
-                        meshs.position.x += 4;
-                    }
-
-                    position = meshs.position.x + 4;
-
-
-                    meshes.push(meshs);
-                }
-                // console.log("mesh button " + meshes.length);
-            });
-
-            // delete selected meshes
-            btndelete.onPointerClickObservable.add(() => {
-                if (currentMesh != null) {
-                    currentMesh.dispose();
-                    currentMesh = null;
-                }
-            });
-            // make selected meshes transparent
-            btnTransparent.onPointerClickObservable.add(() => {
-                // scene.getMeshByName("Example").material.alpha = 0.5;
-                if (currentMesh != null) {
-                    if (currentMesh.material.alpha == 0.5) {
-                        currentMesh.material.alpha = 1;
-                    }
-                    else currentMesh.material.alpha = 0.5;
-                }
-            });
-
-            //make seleted mesh scaling
-            // make selected mesh move (animation)
-            // make seleted mesh change properties by index in babylon GUI
 
             return scene;
         };
-
         window.initFunction = async function () {
+
+
 
             var asyncEngineCreation = async function () {
                 try {
@@ -264,8 +248,7 @@
             window.scene = createScene();
         };
         initFunction().then(() => {
-            scene.then(returnedScene => { sceneToRender = returnedScene; });
-
+            sceneToRender = scene
         });
 
         // Resize
