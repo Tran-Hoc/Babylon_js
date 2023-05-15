@@ -226,7 +226,13 @@
             btndelete.onPointerClickObservable.add(() => {
                 if (currentMesh != null) {
                     currentMesh.dispose();
+                    var index = meshes.indexOf(currentMesh);
+                    console.log("index " + index);
+                    if (index > -1) {
+                        meshes.splice(index, 1);
+                    }
                     currentMesh = null;
+                    console.log("size of meshes: " + meshes.length);
                 }
             });
             // make selected meshes transparent
