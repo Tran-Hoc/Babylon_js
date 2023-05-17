@@ -107,10 +107,39 @@
 
             // Load in a full screen GUI from the snippet server
             let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("GUI", true, scene);
-            let loadedGUI = await advancedTexture.parseFromSnippetAsync("L91IFF#28");
+            let loadedGUI = await advancedTexture.parseFromSnippetAsync("L91IFF#44");
             advancedTexture.idealWidth = 1920;
             advancedTexture.idealHeight = 1080;
 
+            const tabContents = {
+                "Menu": advancedTexture.getControlByName("Menu"),
+                "Properties": advancedTexture.getControlByName("Properties")
+            };
+            tabContents["Menu"].isVisible = true;
+            tabContents["Menu"].left = "-45%";
+            tabContents["Menu"].top = "-40%";
+
+            tabContents["Properties"].isVisible = false;
+
+            // get textbox x, y, z for position
+            let txtXposition = advancedTexture.getControlByName("txtX");
+            let txtYposition = advancedTexture.getControlByName("txtY");
+            let txtZposition = advancedTexture.getControlByName("txtZ");
+            txtXposition.autoStretchWidth = true;
+            txtYposition.autoStretchWidth = true;
+            txtZposition.autoStretchWidth = true;
+
+            // get textbox x, y, z for rotation
+            let txtXrotation = advancedTexture.getControlByName("txtXrotation");
+            let txtYrotation = advancedTexture.getControlByName("txtYrotation");
+            let txtZrotation = advancedTexture.getControlByName("txtZrotation");
+            txtXrotation.autoStretchWidth = true;
+            txtYrotation.autoStretchWidth = true;
+            txtZrotation.autoStretchWidth = true;
+
+            // get textLabel for name 
+            let txtName = advancedTexture.getControlByName("txtName");
+            // get button for controller mesh
             let btnadd = advancedTexture.getControlByName("BtnAdd");
             let btndelete = advancedTexture.getControlByName("BtnDelete");
             let btnTransparent = advancedTexture.getControlByName("BtnTransparent");
@@ -132,9 +161,20 @@
                     // outline
                     outline = currentMesh;
                     outline.renderOutline = false;
+                    tabContents["Properties"].isVisible = false;
+                    txtXposition.text = "";
+                    txtYposition.text = "";
+                    txtZposition.text = "";
+
+                    txtXrotation.text = "";
+                    txtYrotation.text = "";
+                    txtZrotation.text = "";
+                    txtName.text = "";
+
                 }
 
                 currentMesh = mesh;
+
                 // currentMesh.material.wireframe = true;
                 // outline
                 outline = currentMesh;
@@ -159,6 +199,27 @@
                     // // outline
                     // outline = currentMesh;
                     // outline.renderOutline = false;
+
+                    currentMesh.position.y = 0;
+
+                    tabContents["Properties"].isVisible = true;
+                    tabContents["Properties"].left = "35%";
+                    tabContents["Properties"].top = "-30%";
+
+                    txtXposition.text = currentMesh.position.x + "   ";
+                    txtYposition.text = currentMesh.position.y + "   ";
+                    txtZposition.text = currentMesh.position.z + "   ";
+
+                    txtXrotation.text = currentMesh.rotation.x + "   ";
+                    txtYrotation.text = currentMesh.rotation.y + "   ";
+                    txtZrotation.text = currentMesh.rotation.z + "   ";
+
+                    txtName.text = currentMesh.name;
+
+                    var index = meshes.indexOf(currentMesh);
+                    console.log("index " + index);
+                    console.log("position " + currentMesh.position);
+
                     camera.attachControl(canvas, true);
                     startingPoint = null;
                     return;
@@ -203,7 +264,7 @@
             btnadd.onPointerClickObservable.add(async () => {
                 // Import the mesh
                 for (var i = 0; i < 10; i++) {
-                    const result = await BABYLON.SceneLoader.ImportMeshAsync(null, "model/", "spheresAndbox.obj", scene, function (container) {
+                    const result = await BABYLON.SceneLoader.ImportMeshAsync( null, "model/", "spheresAndbox.obj", scene, function (container) {
                         // newMeshes[0].getChildMeshes()[0].metadata = "cannon";
                     });
                     meshs = result.meshes[0];
