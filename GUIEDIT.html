@@ -101,7 +101,7 @@
 
             // Load in a full screen GUI from the snippet server
             let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("GUI", true, scene);
-            let loadedGUI = await advancedTexture.parseFromSnippetAsync("D04P4Z#105");
+            let loadedGUI = await advancedTexture.parseFromSnippetAsync("D04P4Z#111");
 
             // Get controls by name
             let sliderX = advancedTexture.getControlByName("RotationXSlider");
@@ -109,7 +109,12 @@
             let sliderZ = advancedTexture.getControlByName("RotationZSlider");
             let matPicker = advancedTexture.getControlByName("MatColor");
             let specPicker = advancedTexture.getControlByName("SpecColor");
-            let button = advancedTexture.getControlByName("Button");
+            let button = advancedTexture.getControlByName("btnAdd");
+            let image = advancedTexture.getControlByName("Image");
+            
+
+            image.source = "image/boong.jpg";
+
             // Add observables to change the rotation
             sliderX.onValueChangedObservable.add(function (value) {
                 if (skull) {
@@ -129,6 +134,7 @@
             sliderZ.onValueChangedObservable.add(function (value) {
                 if (skull) {
                     skull.rotation.z = value;
+                    skull.scaling.z = value;
                 }
             });
 
@@ -140,10 +146,10 @@
             specPicker.onValueChangedObservable.add(function (value) {
                 skullMaterial.specularColor.copyFrom(value);
             });
-            button.onPointerClickObservable.add( () => {  
-                console.log("button");
+            // button.onPointerClickObservable.add( () => {  
+            //     console.log("button");
 
-            });
+            // });
             // Load in a full screen GUI from the snippet server
             // let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("GUI", true, scene);
             // let loadedGUI = await advancedTexture.parseFromSnippetAsync("L91IFF#5");

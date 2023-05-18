@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Babylon.js - Fullscreen Canvas with HTML Button</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <style>
+        /* make the canvas fill the entire screen */
+        #renderCanvas {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        /* position the button in the bottom-right corner of the screen */
+        #myButton {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <button id="myButton">Click me!</button>
+
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+        var engine = new BABYLON.Engine(canvas, true);
+
+        var createScene = function () {
+            var scene = new BABYLON.Scene(engine);
+
+            // create a camera and light
+            var camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 10, new BABYLON.Vector3(0, 0, 0), scene);
+            camera.attachControl(canvas, true);
+            var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+
+            return scene;
+        };
+
+        var scene = createScene();
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
+    </script>
+</body>
+
+</html>
