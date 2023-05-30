@@ -61,6 +61,7 @@
 
 <body>
     <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <div id="_dragBox"></div>
     <div id="fps">0</div>
     <script>
 
@@ -82,6 +83,36 @@
         var scene = null;
         var sceneToRender = null;
         var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
+
+        // check mesh in drag-area or not
+        const isTargetIn = (startPosition, endPosition, target, camera) => {
+            // get the screen XY of the target, converted from its world coordinate
+            const targetScreenPosition = BABYLON.Vector3.Project(
+                target,
+                BABYLON.Matrix.IdentityReadOnly,
+                scene.getTransformMatrix(),
+                camera.viewport.toGlobal(
+                    scene.getEngine().getRenderWidth(),
+                    scene.getEngine().getRenderHeight()
+                )
+            )
+
+            const minX = Math.min(startPosition.x, endPosition.x)
+            const minY = Math.min(startPosition.y, endPosition.y)
+            const maxX = Math.max(startPosition.x, endPosition.x)
+            const maxY = Math.max(startPosition.y, endPosition.y)
+
+            // check if the target's screen XY is inside of the dragBox XY range or not
+            if (
+                targetScreenPosition.x >= minX &&
+                targetScreenPosition.x <= maxX &&
+                targetScreenPosition.y >= minY &&
+                targetScreenPosition.y <= maxY
+            ) {
+                return true
+            }
+            return false
+        }
 
         const createScene = async function () {
             const scene = new BABYLON.Scene(engine);
@@ -107,7 +138,7 @@
 
             // Load in a full screen GUI from the snippet server
             let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("GUI", true, scene);
-            let loadedGUI = await advancedTexture.parseFromSnippetAsync("L91IFF#44");
+            let loadedGUI = await advancedTexture.parseFromSnippetAsync("L91IFF#72");
             advancedTexture.idealWidth = 1920;
             advancedTexture.idealHeight = 1080;
 
@@ -116,8 +147,8 @@
                 "Properties": advancedTexture.getControlByName("Properties")
             };
             tabContents["Menu"].isVisible = true;
-            tabContents["Menu"].left = "-45%";
-            tabContents["Menu"].top = "-40%";
+            tabContents["Menu"].left = "%";
+            tabContents["Menu"].top = "%";
 
             tabContents["Properties"].isVisible = false;
 
@@ -143,7 +174,8 @@
             let btnadd = advancedTexture.getControlByName("BtnAdd");
             let btndelete = advancedTexture.getControlByName("BtnDelete");
             let btnTransparent = advancedTexture.getControlByName("BtnTransparent");
-
+            let btnDragSelect = advancedTexture.getControlByName("BtnDragSelector");
+            let btnGrouping = advancedTexture.getControlByName("BtnGrouping");
             var startingPoint;
             var currentMesh;
             var outline;
@@ -170,7 +202,12 @@
                     txtYrotation.text = "";
                     txtZrotation.text = "";
                     txtName.text = "";
+                }
 
+
+                toggledMesh = checkdragboxExits(); // if (toggledMesh == false) do nothing : toggledMesh = true remove
+                if (toggledMesh) {
+                    toggledMesh = toggleDrabbox(true);
                 }
 
                 currentMesh = mesh;
@@ -197,8 +234,8 @@
                     // currentMesh.material.wireframe = false;
 
                     // // outline
-                    // outline = currentMesh;
-                    // outline.renderOutline = false;
+                    outline = currentMesh;
+                    outline.renderOutline = false;
 
                     currentMesh.position.y = 0;
 
@@ -240,12 +277,23 @@
                 startingPoint = current;
 
             }
-            scene.onPointerObservable.add((pointerInfo) => {
+            scene.onPointerObservable.add((pointerInfo, event) => {
                 switch (pointerInfo.type) {
                     case BABYLON.PointerEventTypes.POINTERDOWN:
 
                         if (pointerInfo.pickInfo.hit && pointerInfo.pickInfo.pickedMesh != ground) {
-                            pointerDown(pointerInfo.pickInfo.pickedMesh)
+                            pointerDown(pointerInfo.pickInfo.pickedMesh);
+
+                        }
+                        else if (pointerInfo.pickInfo.pickedMesh == ground && event.button == 0) {
+                            var vector = pointerInfo.pickInfo.pickedPoint;
+                            console.log('left mouse click: ' + vector.x + ',' + vector.y + ',' + vector.z);
+                        }
+                        else if (pointerInfo.pickInfo.pickedMesh == ground) {
+                            var vector = pointerInfo.pickInfo.pickedPoint;
+
+                            console.log('ground click: ' + vector.x + ',' + vector.y + ',' + vector.z);
+                            console.log("pointer info: " + pointerInfo.event.button);
                         }
                         break;
                     case BABYLON.PointerEventTypes.POINTERUP:
@@ -254,17 +302,19 @@
                     case BABYLON.PointerEventTypes.POINTERMOVE:
                         pointerMove();
                         break;
+
                 }
             });
 
             var position = 1;
             var meshs;
             var meshes = [];
+
             // Add an event listener to the button
             btnadd.onPointerClickObservable.add(async () => {
                 // Import the mesh
                 for (var i = 0; i < 10; i++) {
-                    const result = await BABYLON.SceneLoader.ImportMeshAsync( null, "model/", "spheresAndbox.obj", scene, function (container) {
+                    const result = await BABYLON.SceneLoader.ImportMeshAsync(null, "model/", "spheresAndbox.obj", scene, function (container) {
                         // newMeshes[0].getChildMeshes()[0].metadata = "cannon";
                     });
                     meshs = result.meshes[0];
@@ -274,10 +324,7 @@
                     else {
                         meshs.position.x += 4;
                     }
-
                     position = meshs.position.x + 4;
-
-
                     meshes.push(meshs);
                 }
                 // console.log("mesh button " + meshes.length);
@@ -307,6 +354,131 @@
                 }
             });
 
+
+            btnDragSelect.onPointerClickObservable.add(() => {
+                toggledMesh = checkdragboxExits();
+                toggledMesh = toggleDrabbox(toggledMesh);
+            })
+
+            let toggledMesh = false;
+
+            const toggleDrabbox = function (toggle) {
+
+                if (!toggle) {
+                    setTimeout(function () {
+                        camera.detachControl(canvas);
+                    }, 0);
+                    document.querySelector("#canvasZone").appendChild(dragBox);
+                    return true;
+                }
+                else {
+                    camera.attachControl(canvas, true);
+                    document.querySelector("#canvasZone").removeChild(dragBox);
+                    return false;
+                }
+            }
+
+            const checkdragboxExits = function () {
+                if (document.querySelector('#canvasZone #_dragBox') !== null) {
+                    // exist
+                    return true;
+                } else {
+                    // not exist
+                    return false;
+                }
+
+            }
+
+            btnGrouping.onPointerClickObservable.add(() => {
+
+                if (selectedMeshOld != null) {
+
+                    var groupMesh = BABYLON.Mesh.MergeMeshes(selectedMeshOld);
+
+                    // remove the same element
+                    meshes = meshes.filter(n => !selectedMeshOld.includes(n));
+
+                    meshes.push(groupMesh);
+                    console.log("grouping");
+                }
+
+            })
+            //-----------create drag selector
+
+            // initialize startPointerPosition with null
+            let startPointerPosition = null
+
+            // find a div element with id _dragBox, and if you cannot find create it
+            const dragBox = document.querySelector("#_dragBox") || document.createElement("div");
+            dragBox.id = "_dragBox";
+            // default style of the dragBox
+            const defStyle = "background-color: gray; position: absolute; opacity: 0.3;";
+            dragBox.style = defStyle;
+
+            // make the position of div with id canvasZone relative, so that the dragBox can refer to it
+            document.querySelector("#canvasZone").style = "position: relative;";
+            // set the canvasZone to be the parent of dragBox
+            document.querySelector("#canvasZone").appendChild(dragBox);
+            document.querySelector("#canvasZone").removeChild(dragBox);
+
+            var selectedMeshOld = [];
+            scene.onPointerObservable.add((eventData) => {
+                if (eventData.type === BABYLON.PointerEventTypes.POINTERDOWN) {
+                    // set startPointerPosition with pointer down event
+                    startPointerPosition = { x: scene.pointerX, y: scene.pointerY }
+                } else if (eventData.type === BABYLON.PointerEventTypes.POINTERMOVE) {
+                    if (dragBox && startPointerPosition) {
+                        // set currentPointerPosition with every pointer move event
+                        const currentPointerPosition = { x: scene.pointerX, y: scene.pointerY }
+
+                        // compute min and max of screen XY with start/currentPointerPosition
+                        // to set left, top, width and height of the dragBox
+                        const minX = Math.min(startPointerPosition.x, currentPointerPosition.x)
+                        const minY = Math.min(startPointerPosition.y, currentPointerPosition.y)
+                        const maxX = Math.max(startPointerPosition.x, currentPointerPosition.x)
+                        const maxY = Math.max(startPointerPosition.y, currentPointerPosition.y)
+
+                        // update dragBox's style
+                        dragBox.style = `${defStyle} left: ${minX}px; top: ${minY}px; width: ${maxX - minX}px; height: ${maxY - minY}px;`;
+                    }
+                } else if (eventData.type === BABYLON.PointerEventTypes.POINTERUP) {
+                    if (startPointerPosition) {
+                        // set endPointerPosition with pointer up event
+                        const endPointerPosition = { x: scene.pointerX, y: scene.pointerY }
+                        // select spheres using array filter method
+                        const selectedSpheres = meshes.filter((meshe) => isTargetIn(startPointerPosition, endPointerPosition, meshe.getAbsolutePosition(), camera))
+
+                        // initialize startPointerPosition with null
+                        startPointerPosition = null
+                        // initialize dragBox's style with default one wich doesn't include width and height
+                        dragBox.style = defStyle;
+
+                        // log selected spheres
+                        console.log('selectedSpheres: ', selectedSpheres)
+                        // alert with selected spheres counts
+                        // alert(`${selectedSpheres.length} ${selectedSpheres.length > 1 ? 'spheres are' : 'sphere is'} selected!`)
+
+                        selectedMeshOld.forEach(removeHinglightLayer);
+                        selectedMeshOld = selectedSpheres;
+
+                        selectedSpheres.forEach(HinglightLayer);
+                        // console.log(`name: ` + namelist);
+                    }
+                }
+            })
+            // var namelist = '';
+            var hl = new BABYLON.HighlightLayer("hl1", scene);
+            function HinglightLayer(item, index) {
+                // namelist += index + ": " + item + "<br>";
+                hl.addMesh(item, BABYLON.Color3.Red());
+
+            }
+            function removeHinglightLayer(item) {
+                hl.removeMesh(item);
+            }
+
+            //----------------------------------------------------------------------
+
             //make seleted mesh scaling
             // make selected mesh move (animation)
             // make seleted mesh change properties by index in babylon GUI
@@ -328,12 +500,12 @@
             window.engine = await asyncEngineCreation();
             if (!engine) throw 'engine should not be null.';
             startRenderLoop(engine, canvas);
-            window.scene = createScene();
+            window.scene = await createScene();
         };
         initFunction().then(() => {
-            scene.then(returnedScene => { sceneToRender = returnedScene; });
-
+            sceneToRender = scene
         });
+
 
         // Resize
         window.addEventListener("resize", function () {

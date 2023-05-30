@@ -66,7 +66,7 @@
         const createScene = () => {
             const scene = new BABYLON.Scene(engine);
 
-            const camera = new BABYLON.ArcRotateCamera("Camera", - Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero());
+            const camera = new BABYLON.ArcRotateCamera("Camera", - Math.PI / 2, Math.PI / 4, 30, BABYLON.Vector3.Zero());
             camera.attachControl(canvas, true);
 
             const light1 = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(0, -1, 1));
@@ -82,6 +82,9 @@
 
             const box = BABYLON.MeshBuilder.CreateBox("box", {});
             box.position.x = 2;
+
+            const box2 = BABYLON.MeshBuilder.CreateBox("box", {});
+            box2.position.x = -2;
 
             // Create lines meshes to represent the local axes
             var axisX = BABYLON.Mesh.CreateLines("axisX", [
@@ -103,36 +106,28 @@
             axisZ.color = new BABYLON.Color3(0, 0, 1);
 
             // Set the parent of the lines meshes to the object
-            axisX.parent = box;
-            axisY.parent = box;
-            axisZ.parent = box;
+            axisX.parent = box2;
+            axisY.parent = box2;
+            axisZ.parent = box2;
 
 
             // Define the path points
             var points = [
                 new BABYLON.Vector3(0, 0, 0),
                 new BABYLON.Vector3(10, 0, 0),
-                new BABYLON.Vector3(10, 0, 10),
-                new BABYLON.Vector3(0, 0, 10),
                 new BABYLON.Vector3(0, 0, 0),
-                new BABYLON.Vector3(-20, 0, 0),
-                new BABYLON.Vector3(-20, 0, 30),
-                new BABYLON.Vector3(20, 0, 30),
-                new BABYLON.Vector3(40, 30, 30),
-                new BABYLON.Vector3(-20, 10, -20),
-                new BABYLON.Vector3(-20, 50, -20),
-                new BABYLON.Vector3(-20, 0, -20),
+                new BABYLON.Vector3(-10, 0, 0),
+                new BABYLON.Vector3(0, 0, 0),
+                // new BABYLON.Vector3(-20, 0, 0),
+                // new BABYLON.Vector3(-20, 0, 30),
+                // new BABYLON.Vector3(20, 0, 30),
+                // new BABYLON.Vector3(40, 30, 30),
+                // new BABYLON.Vector3(-20, 10, -20),
+                // new BABYLON.Vector3(-20, 50, -20),
+                // new BABYLON.Vector3(-20, 0, -20),
             ];
-            // Define the circle radius and number of points
-            var radius = 10;
-            var pointCount = 60;
-            for (var i = 0; i <= pointCount; i++) {
-                var angle = i * 2 * Math.PI / pointCount;
-                var x = radius * Math.cos(angle);
-                var y = radius * Math.sin(angle);
-                points.push(new BABYLON.Vector3(x, 0, y));
-            }
-            points.push(new BABYLON.Vector3(0, 0, 0));
+            // points.push(new BABYLON.Vector3(0, 0, 0));
+
             // Create a lines mesh to represent the path
             var lines = BABYLON.MeshBuilder.CreateLines("lines", { points: points }, scene);
 
@@ -147,20 +142,54 @@
 
             // Set the animation keys
             var pathKeys = [];
-            for (var i = 0; i < points.length; i++) {
-                pathKeys.push({ frame: i * 40, value: points[i] });
-            }
-            pathAnimation.setKeys(pathKeys);
 
+            // from start to begin circle animation
+            for (var i = 0; i < points.length; i++) {
+                pathKeys.push({ frame: i * 60, value: points[i] });
+            }
+
+            pathAnimation.setKeys(pathKeys);
             // Add the animation to the object
             box.animations.push(pathAnimation);
+            scene.beginAnimation(box, 0, (points.length - 1) * 60, true);
+
+            // Define the circle radius and number of points
+            var radius = 10;
+            var pointCount = 60;
+            for (var i = 0; i <= pointCount; i++) {
+                var angle = i * 2 * Math.PI / pointCount;
+                var x = radius * Math.cos(angle);
+                var y = radius * Math.sin(angle);
+                console.log(x + " " + y + " ");
+                points.push(new BABYLON.Vector3(x, 0, y));
+            }
+
+            // Create a lines mesh to represent the path
+            var lines = BABYLON.MeshBuilder.CreateLines("lines", { points: points }, scene);
+
+            // Set the animation keys
+            pathKeys = [];
+            // from circle animation to end
+            for (var i = points.length - pointCount - 1; i < points.length; i++) {
+                pathKeys.push({ frame: i * 30, value: points[i] });
+            }
+
+            // Create a path animation
+            var pathAnimation1 = new BABYLON.Animation(
+                "pathAnimation",
+                "position",
+                120,
+                BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+            );
+
+            pathAnimation1.setKeys(pathKeys);
+
+            // Add the animation to the object
+            box2.animations.push(pathAnimation1);
 
             // Begin the animation
-            scene.beginAnimation(box, 0, (points.length - 1) * 40, true);
-
-
-            scene.beginAnimation(box, 0, (points.length - 1) * 40, true, 2);
-
+            scene.beginAnimation(box2, 0, (points.length - 1) * 60, true);
 
             return scene;
         };

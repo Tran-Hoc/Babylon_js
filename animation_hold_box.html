@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>Babylon.js sample code</title>
+
+    <!-- Babylon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+    <script src="https://preview.babylonjs.com/ammo.js"></script>
+    <script src="https://preview.babylonjs.com/cannon.js"></script>
+    <script src="https://preview.babylonjs.com/Oimo.js"></script>
+    <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+    <style>
+        html,
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #canvasZone {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
+
+        const createScene = () => {
+            const scene = new BABYLON.Scene(engine);
+
+            const camera = new BABYLON.ArcRotateCamera("Camera", - Math.PI / 2, Math.PI / 4, 10, BABYLON.Vector3.Zero());
+            camera.attachControl(canvas, true);
+
+            const light1 = new BABYLON.DirectionalLight("DirectionalLight", new BABYLON.Vector3(0, -1, 1));
+            const light2 = new BABYLON.HemisphericLight("HemiLight", new BABYLON.Vector3(0, 1, 0));
+            light1.intensity = 0.75;
+            light2.intensity = 0.5;
+
+            var ground = BABYLON.Mesh.CreateGround("ground1", 200, 200, 0, scene);
+            //create grid 
+            var grid = new BABYLON.GridMaterial("grid", scene);
+            grid.gridRatio = 10;
+            ground.material = grid;
+
+            // Create box1
+            var box1 = BABYLON.Mesh.CreateBox("Box1", 2.0, scene);
+            box1.position.x = -5;
+
+            // Create box2
+            var box2 = BABYLON.Mesh.CreateBox("Box2", 2.0, scene);
+            box2.position.x = 5;
+
+            // Animation keys for box1
+            var keys = [];
+            keys.push({
+                frame: 0,
+                value: box1.position
+            });
+            keys.push({
+                frame: 100,
+                value: new BABYLON.Vector3(10, 0, 0)
+            });
+
+            // Create the animation for box1
+            var animationBox1 = new BABYLON.Animation("box1Animation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+            animationBox1.setKeys(keys);
+
+            // Link the animation to box1
+            box1.animations.push(animationBox1);
+
+            // Run the animation
+            scene.beginAnimation(box1, 0, 100, false);
+
+            // When the animation ends, parent box2 to box1
+            scene.onAnimationEndObservable.add(function () {
+                box2.parent = box1;
+            });
+            return scene;
+        };
+        window.initFunction = async function () {
+
+            var asyncEngineCreation = async function () {
+                try {
+                    return createDefaultEngine();
+                } catch (e) {
+                    console.log("the available createEngine function failed. Creating the default engine instead");
+                    return createDefaultEngine();
+                }
+            }
+
+            window.engine = await asyncEngineCreation();
+            if (!engine) throw 'engine should not be null.';
+            startRenderLoop(engine, canvas);
+            window.scene = createScene();
+        };
+        initFunction().then(() => {
+            sceneToRender = scene
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+
+</html>
