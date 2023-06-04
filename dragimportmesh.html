@@ -317,7 +317,9 @@
                     const result = await BABYLON.SceneLoader.ImportMeshAsync(null, "model/", "spheresAndbox.obj", scene, function (container) {
                         // newMeshes[0].getChildMeshes()[0].metadata = "cannon";
                     });
+
                     meshs = result.meshes[0];
+                    meshs.checkCollisions = true;
                     if (position != 1) {
                         meshs.position.x += position;
                     }
@@ -479,9 +481,19 @@
 
             //----------------------------------------------------------------------
 
-            //make seleted mesh scaling
-            // make selected mesh move (animation)
-            // make seleted mesh change properties by index in babylon GUI
+            // make seleted mesh scaling - ok
+                
+            // make selected mesh move (animation) - ok 
+            
+            // make seleted mesh change properties by index in babylon GUI - ok
+
+            // take object: merger, parent, collision
+            
+            // animation: move ok  
+                // move to point -> event merge
+                // position -> event removemerge
+             
+            // 
 
             return scene;
         };
