@@ -1,57 +1,76 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-        <title>Babylon.js sample code</title>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-        <!-- Babylon.js -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
-        <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
-        <script src="https://cdn.babylonjs.com/ammo.js"></script>
-        <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
-        <script src="https://cdn.babylonjs.com/cannon.js"></script>
-        <script src="https://cdn.babylonjs.com/Oimo.js"></script>
-        <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
-        <script src="https://cdn.babylonjs.com/babylon.js"></script>
-        <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
-        <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
-        <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
-        <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
-        <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
-        <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
-        <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <title>Babylon.js sample code</title>
 
-        <style>
-            html, body {
-                overflow: hidden;
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
+    <!-- Babylon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+    <script src="https://cdn.babylonjs.com/ammo.js"></script>
+    <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+    <script src="https://cdn.babylonjs.com/cannon.js"></script>
+    <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+    <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <script src="https://preview.babylonjs.com/recast.js"> </script>
+    <style>
+        html,
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
 
-            #renderCanvas {
-                width: 100%;
-                height: 100%;
-                touch-action: none;
-            }
-            
-            #canvasZone {
-                width: 100%;
-                height: 100%;
-            }
-        </style>
-    </head>
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #canvasZone {
+            width: 100%;
+            height: 100%;
+        }
+
+        #fps {
+            position: absolute;
+            background-color: black;
+            border: 2px solid red;
+            text-align: center;
+            font-size: 40px;
+            color: white;
+            top: 15px;
+            right: 10px;
+            width: 100px;
+            height: 80px;
+        }
+    </style>
+</head>
+
 <body>
     <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <div id="fps">0</div>
     <script>
         var canvas = document.getElementById("renderCanvas");
-
+        let divFps = document.getElementById("fps");
         var startRenderLoop = function (engine, canvas) {
             engine.runRenderLoop(function () {
                 if (sceneToRender && sceneToRender.activeCamera) {
                     sceneToRender.render();
+                    const fps = engine.getFps().toFixed();
+                    divFps.innerHTML = `${fps} FPS`;
                 }
             });
         }
@@ -59,51 +78,133 @@
         var engine = null;
         var scene = null;
         var sceneToRender = null;
-        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
-        var createScene = function () {
-        
+
+        var staticMesh = null;
+
+        var obstacle = null;
+        var cylinder;
+
+        var obstacle1 = null;
+        var cylinder1;
+
+        var boxObstacle = null;
+        var box;
+
+        // var toggleObstacle = function (scene, navigationPlugin) {
+        //     if (!obstacle) {
+
+        //         var position = new BABYLON.Vector3(0, -1, 0);
+        //         var radius = 1;
+        //         var height = 3;
+        //         obstacle = navigationPlugin.addCylinderObstacle(position, radius, height);
+        //         cylinder = BABYLON.MeshBuilder.CreateCylinder("cylinder", { height: height, diameter: radius * 2 }, scene);
+        //         cylinder.position = position
+
+        //         var position1 = new BABYLON.Vector3(0, -1, 2);
+
+        //         obstacle1 = navigationPlugin.addCylinderObstacle(position1, radius, height);
+        //         cylinder1 = BABYLON.MeshBuilder.CreateCylinder("cylinder", { height: height, diameter: radius * 2 }, scene);
+        //         cylinder1.position = position1
+
+        //         var matObstacle = new BABYLON.StandardMaterial('matObstacle', scene);
+        //         matObstacle.diffuseColor = new BABYLON.Color3(0.7, 0.3, 0.3);
+        //         matObstacle.wireframe = true;
+
+        //         cylinder.material = matObstacle;
+
+        //         const position3 = new BABYLON.Vector3(-4, 0, 5);
+        //         const extent3 = new BABYLON.Vector3(2, 2, 2);
+        //         const angle3 = 0;
+        //         const obstacle3 = navigationPlugin.addBoxObstacle(position3, extent3, angle3);
+        //         var box3 = new BABYLON.MeshBuilder.CreateBox("box3", { size: 2 });
+        //         box3.position = position3;
+        //         box3.rotation.y = angle3;
+        //         box3.material = matObstacle;
+
+        //     } else {
+        //         navigationPlugin.removeObstacle(obstacle);
+        //         obstacleMesh.dispose();
+        //         obstacle = null;
+        //     }
+        // }
+        var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
+
+        var createScene = async function () {
+
             // This creates a basic Babylon Scene object (non-mesh)
             var scene = new BABYLON.Scene(engine);
-            let navigationPlugin = new BABYLON.RecastJSPlugin();
-        
+
+            async function buildNav() {
+                await Recast();
+                console.log('recast loaded');
+                const navigationPlugin = new BABYLON.RecastJSPlugin();
+                console.log('nav plugin loaded');
+                return navigationPlugin;
+            }
+            const navigationPlugin = await buildNav();
+
             // This creates and positions a free camera (non-mesh)
-            var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(-6, 4, -8), scene);
+            var camera = new BABYLON.FreeCamera("camera1", new BABYLON.Vector3(-6, 100, -8), scene);
             // This targets the camera to scene origin
             camera.setTarget(BABYLON.Vector3.Zero());
             // This attaches the camera to the canvas
             camera.attachControl(canvas, true);
-        
+
             // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
             var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
             // Default intensity is 1. Let's dim the light a small amount
             light.intensity = 0.7;
-        
-            var staticMesh = createStaticMesh(scene);
+
+           staticMesh = await updateStaticMesh(scene);
+            // staticMesh = createStaticMesh(scene);
+            var sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 4, segments: 32 }, scene);
+            sphere.position = new BABYLON.Vector3(3, 4, 9);
+            BABYLON.NodeMaterial.ParseFromSnippetAsync("DGN9E2#1").then((material) => {
+                sphere.material = material;
+            });
+
+            var nInstances = 100;
+            var range = 50;
+
+            for (var i = 0; i < 10; i++) {
+                var inst = sphere.createInstance("s" + i);
+                inst.alwaysSelectAsActiveMesh = true;
+                inst.position.x = (Math.random() - 0.5) * range;
+                inst.position.y = (Math.random() - 0.5) * range;
+                inst.position.z = (Math.random() - 0.5) * range;
+                // arr.push(inst);
+            }
+
             var navmeshParameters = {
                 cs: 0.2,
-                ch: 0.2,
-                walkableSlopeAngle: 90,
-                walkableHeight: 1.0,
-                walkableClimb: 1,
+                ch: 0.01,
+                walkableSlopeAngle: 0,
+                walkableHeight: 0.0,
+                walkableClimb: 0,
                 walkableRadius: 1,
                 maxEdgeLen: 12.,
                 maxSimplificationError: 1.3,
-                minRegionArea: 1,
-                mergeRegionArea: 2,
+                minRegionArea: 8,
+                mergeRegionArea: 20,
                 maxVertsPerPoly: 6,
                 detailSampleDist: 6,
-                detailSampleMaxError: 1,
+                detailSampleMaxError: 15,
+                borderSize: 1,
+                tileSize: 20
             };
-        
+
             navigationPlugin.createNavMesh([staticMesh], navmeshParameters);
+
+            // toggleObstacle(scene, navigationPlugin);
+
             var navmeshdebug = navigationPlugin.createDebugNavMesh(scene);
-            navmeshdebug.position = new BABYLON.Vector3(0, 0.01, 0);
-        
+            navmeshdebug.position = new BABYLON.Vector3(0, 0, 0);
+
             var matdebug = new BABYLON.StandardMaterial('matdebug', scene);
             matdebug.diffuseColor = new BABYLON.Color3(0.1, 0.2, 1);
-            matdebug.alpha = 0.2;
+            matdebug.alpha = 1;
             navmeshdebug.material = matdebug;
-        
+
             // crowd
             var crowd = navigationPlugin.createCrowd(10, 0.1, scene);
             let agents = []
@@ -112,26 +213,39 @@
                 radius: 0.1,
                 height: 0.2,
                 maxAcceleration: 4.0,
-                maxSpeed: 1.0,
-                collisionQueryRange: 0.5,
+                maxSpeed: 4.0,
+                collisionQueryRange: 5,
                 pathOptimizationRange: 0.0,
                 separationWeight: 1.0
             };
-        
-            for (i = 0; i < 4; i++) {
-                var width = 0.20;
+
+            for (i = 0; i < 10; i++) {
+                var width = 1;
                 var agentCube = BABYLON.MeshBuilder.CreateBox("cube", { size: width, height: width }, scene);
                 var matAgent = new BABYLON.StandardMaterial('mat2', scene);
                 var variation = Math.random();
                 matAgent.diffuseColor = new BABYLON.Color3(0.4 + variation * 0.6, 0.3, 1.0 - variation * 0.3);
                 agentCube.material = matAgent;
-                var randomPos = navigationPlugin.getRandomPointAround(new BABYLON.Vector3(-2.0, 0.1, -1.8), 0.5);
+                var randomPos = navigationPlugin.getRandomPointAround(new BABYLON.Vector3(-2.0, 0.1, -1.8), 5);
                 var transform = new BABYLON.TransformNode();
                 agentCube.parent = transform;
                 var agentIndex = crowd.addAgent(randomPos, agentParams, transform);
                 agents.push({ idx: agentIndex, trf: transform, mesh: agentCube })
             }
-        
+
+            for (i = 0; i < 10; i++) {
+                var width = 0.5;
+                var agentCube = BABYLON.MeshBuilder.CreateBox("cube", { size: width, height: width }, scene);
+                var matAgent = new BABYLON.StandardMaterial('mat2', scene);
+                var variation = Math.random();
+                matAgent.diffuseColor = new BABYLON.Color3(0.4 + variation * 0.6, 0.3, 1.0 - variation * 0.3);
+                agentCube.material = matAgent;
+                var randomPos = navigationPlugin.getRandomPointAround(new BABYLON.Vector3(2.0, 0.1, -1.8), 5);
+                var transform = new BABYLON.TransformNode();
+                agentCube.parent = transform;
+                var agentIndex = crowd.addAgent(randomPos, agentParams, transform);
+                agents.push({ idx: agentIndex, trf: transform, mesh: agentCube })
+            }
             var startingPoint;
             var pathLine;
             var getGroundPosition = function () {
@@ -139,10 +253,10 @@
                 if (pickinfo.hit) {
                     return pickinfo.pickedPoint;
                 }
-        
+
                 return null;
             }
-        
+
             var pointerDown = function (mesh) {
                 currentMesh = mesh;
                 startingPoint = getGroundPosition();
@@ -153,12 +267,13 @@
                     var i;
                     for (i = 0; i < agents.length; i++) {
                         crowd.agentGoto(agents[i].idx, navigationPlugin.getClosestPoint(startingPoint));
+                        var pathPoints = navigationPlugin.computePath(crowd.getAgentPosition(agents[0]), navigationPlugin.getClosestPoint(startingPoint));
+                        var pathLine = BABYLON.MeshBuilder.CreateDashedLines("ribbon", { points: pathPoints, updatable: true, instance: pathLine }, scene);
                     }
-                    var pathPoints = navigationPlugin.computePath(crowd.getAgentPosition(agents[0]), navigationPlugin.getClosestPoint(startingPoint));
-                    pathLine = BABYLON.MeshBuilder.CreateDashedLines("ribbon", { points: pathPoints, updatable: true, instance: pathLine }, scene);
+
                 }
             }
-        
+
             scene.actionManager = new BABYLON.ActionManager(scene);
             scene.actionManager.registerAction(
                 new BABYLON.ExecuteCodeAction(
@@ -174,63 +289,145 @@
                     }
                 )
             );
-        
-        
+
+
             scene.onPointerObservable.add((pointerInfo) => {
                 switch (pointerInfo.type) {
                     case BABYLON.PointerEventTypes.POINTERDOWN:
-                        if (pointerInfo.pickInfo.hit) {
-                            pointerDown(pointerInfo.pickInfo.pickedMesh)
+                        switch (pointerInfo.event.button) {
+                            case 0:
+                                console.log("LEFT");
+                                if (pointerInfo.pickInfo.hit) {
+                                    pointerDown(pointerInfo.pickInfo.pickedMesh)
+                                }
+                                break;
+                            case 1:
+                                console.log("MIDDLE");
+                                break;
+                            case 2:
+                                console.log("RIGHT");
+                                break;
                         }
-        
                         break;
                     case BABYLON.PointerEventTypes.POINTERUP:
                         camera.attachControl(canvas, true);
                         break;
-        
+
+
                 }
             });
+
+            // await updateStaticMesh(scene);
             return scene;
         };
-        
+
         function createStaticMesh(scene) {
-            var ground = BABYLON.Mesh.CreateGround("ground1", 6, 6, 2, scene);
-        
+            var ground = BABYLON.Mesh.CreateGround("ground1", 100, 100, 0, scene);
+
             // Materials
             var mat1 = new BABYLON.StandardMaterial('mat1', scene);
             mat1.diffuseColor = new BABYLON.Color3(1, 1, 1);
-        
+
             // var sphere = BABYLON.MeshBuilder.CreateSphere("sphere1", { diameter: 2, segments: 16 }, scene);
             // sphere.material = mat1;
             // sphere.position.y = 1;
-        
+
             // var cube = BABYLON.MeshBuilder.CreateBox("cube", { size: 1, height: 3 }, scene);
             // cube.position = new BABYLON.Vector3(1, 1.5, 0);
             // //cube.material = mat2;
-        
-            // var mesh = BABYLON.Mesh.MergeMeshes([sphere, cube, ground]);
-        
-            return ground;
-        }
-        
-                window.initFunction = async function() {
-                    
-                    
-                    
-                    var asyncEngineCreation = async function() {
-                        try {
-                        return createDefaultEngine();
-                        } catch(e) {
-                        console.log("the available createEngine function failed. Creating the default engine instead");
-                        return createDefaultEngine();
-                        }
-                    }
 
-                    window.engine = await asyncEngineCreation();
-        if (!engine) throw 'engine should not be null.';
-        startRenderLoop(engine, canvas);
-        window.scene = createScene();};
-        initFunction().then(() => {sceneToRender = scene                    
+            var mesh = BABYLON.Mesh.MergeMeshes([ground]);
+
+            return mesh;
+        }
+        async function updateStaticMesh(scene) {
+            var ground = await BABYLON.Mesh.CreateGround("ground1", 100, 100, 0, scene);
+            ground.position.y = 0;
+
+            var groundMaterial = new BABYLON.GridMaterial("groundMaterial", scene);
+            groundMaterial.majorUnitFrequency = 5;
+            groundMaterial.minorUnitVisibility = 0.45;
+            groundMaterial.gridRatio = 1;
+            groundMaterial.backFaceCulling = false;
+            groundMaterial.mainColor = new BABYLON.Color3(1, 1, 1);
+            groundMaterial.lineColor = new BABYLON.Color3(1.0, 1.0, 1.0);
+            groundMaterial.opacity = 0.98;
+
+            // Materials
+            var mat1 = new BABYLON.StandardMaterial('mat1', scene);
+            mat1.diffuseColor = new BABYLON.Color3(1, 1, 1);
+
+            var sphere = BABYLON.MeshBuilder.CreateSphere("sphere1", { diameter: 2, segments: 16 }, scene);
+            sphere.material = mat1;
+            sphere.position.x = -3;
+
+            var cube = BABYLON.MeshBuilder.CreateBox("cube", { size: 1, height: 3 }, scene);
+            cube.position = new BABYLON.Vector3(1, 1.5, -4);
+            //cube.material = mat2;
+
+            const position3 = new BABYLON.Vector3(-4, 0, 5);
+            const extent3 = new BABYLON.Vector3(2, 2, 2);
+            const angle3 = 0;
+
+            var matObstacle = new BABYLON.StandardMaterial('matObstacle', scene);
+            matObstacle.diffuseColor = new BABYLON.Color3(0.7, 0.3, 0.3);
+            matObstacle.wireframe = true;
+
+            var box3 = new BABYLON.MeshBuilder.CreateBox("box3", { size: 2 }, scene);
+            box3.position = position3;
+            box3.rotation.y = angle3;
+            box3.material = matObstacle;
+
+            var box4 = new BABYLON.MeshBuilder.CreateBox("box4", { size: 3 }, scene);
+            box4.position = new BABYLON.Vector3(-4, 0, 9);
+            box4.rotation.y = 0;
+            box4.material = matObstacle;
+
+            var box5 = new BABYLON.MeshBuilder.CreateBox("box4", { size: 3 }), scene;
+            box5.position = new BABYLON.Vector3(6, 0, 9);
+            box5.rotation.y = 0;
+            box5.material = matObstacle;
+            var meshs = [];
+            var arr = [];
+            for (var i = 0; i < 100; i++) {
+                var newmesh = new BABYLON.MeshBuilder.CreateBox("box" + (i + 6), { size: 2 }, scene);
+                // newmesh.alwaysSelectAsActiveMesh = true;
+                var max = 50;
+                var min = -max;
+                newmesh.position.x = Math.floor(Math.random() * (max - min)) + min;
+                newmesh.position.z = Math.floor(Math.random() * (max - min)) + min;
+                newmesh.position.y = 0;
+                newmesh.material = matObstacle;
+                arr.push(newmesh);
+            }
+
+            ground.material = matObstacle;
+            var arr2 = [ground, cube, box3, box4, box5];
+            ground.material = groundMaterial;
+            var mesh = BABYLON.Mesh.MergeMeshes(arr2.concat(arr));
+
+            // var meshhh = BABYLON.Mesh.MergeMeshes(arr1);
+            return mesh;
+        }
+
+        window.initFunction = async function () {
+
+            var asyncEngineCreation = async function () {
+                try {
+                    return createDefaultEngine();
+                } catch (e) {
+                    console.log("the available createEngine function failed. Creating the default engine instead");
+                    return createDefaultEngine();
+                }
+            }
+
+            window.engine = await asyncEngineCreation();
+            if (!engine) throw 'engine should not be null.';
+            startRenderLoop(engine, canvas);
+            window.scene = await createScene();
+        };
+        initFunction().then(() => {
+            sceneToRender = scene
         });
 
         // Resize
@@ -239,4 +436,5 @@
         });
     </script>
 </body>
+
 </html>

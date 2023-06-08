@@ -109,7 +109,7 @@
             var grid = new BABYLON.GridMaterial("grid", scene);
             grid.gridRatio = 10;
             ground.material = grid;
-
+            ground.backFaceCulling = true;
             // Create local axes
             const localAxes = new BABYLON.AxesViewer(scene, 1);
             localAxes.xAxis.parent = ground;
@@ -129,7 +129,7 @@
             const boxdrop = BABYLON.MeshBuilder.CreateBox("box", { height: 1, width: 5, depth: 5 }, scene);
 
             // Set the initial position of the box
-            boxdrop.position.x = -10;
+            boxdrop.position = new BABYLON.Vector3(-10, 0, 0);
 
             var startingPoint;
             // var pathLine = [];
@@ -171,6 +171,41 @@
             button1.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
             button1.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
 
+            var button2 = BABYLON.GUI.Button.CreateSimpleButton("but2", "Stop");
+            button2.width = "150px"
+            button2.height = "40px";
+            button2.color = "white";
+            button2.cornerRadius = 20;
+            button2.background = "green";
+            button2.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+            button2.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+            button2.top = "-50px";
+
+            const input = new BABYLON.GUI.InputText();
+            input.width = 0.2;
+            input.maxWidth = 0.2;
+            input.height = "40px";
+            input.text = "";
+            input.color = "white";
+            input.background = "grey";
+            input.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+            input.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+            input.top = "-200px";
+            advancedTexture.addControl(input);
+
+            // input.onTextChangedObservable.add((newText) => {
+            //     console.log("Text changed:", newText.text);
+            // });
+            // input.onBeforeKeyAddObservable.add((inputText, key) => {
+            //     if (isNaN(key)) {
+            //         return false;
+            //     }
+            // });
+            input.onBlurObservable.add(() => {
+                console.log("Input blurred:", input.text);
+
+            });
+
             const box2 = BABYLON.MeshBuilder.CreateBox("box", {});
             box2.position.y = 2;
 
@@ -184,6 +219,15 @@
             matPlan1.backFaceCulling = false;
             matPlan1.emissiveColor = new BABYLON.Color3(0.6, 0.2, 0.5);
 
+            // Create a path animation
+            var pathAnimation1 = new BABYLON.Animation(
+                "pathAnimation",
+                "position",
+                60,
+                BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+
             button1.onPointerUpObservable.add(function () {
                 // Set the animation keys
                 var pathKeys = [];
@@ -193,14 +237,6 @@
                     pathKeys.push({ frame: i * 60, value: pathPoints[i] });
                 }
 
-                // Create a path animation
-                var pathAnimation1 = new BABYLON.Animation(
-                    "pathAnimation",
-                    "position",
-                    60,
-                    BABYLON.Animation.ANIMATIONTYPE_VECTOR3
-                );
-
                 pathAnimation1.setKeys(pathKeys);
 
                 // Add the animation to the object
@@ -209,14 +245,14 @@
                 scene.beginAnimation(box2, 0, (pathPoints.length - 1) * 60, true);
 
             });
+            button2.onPointerUpObservable.add(function () {
+                console.log("stop");
+            })
+
             var balloonX = BABYLON.Mesh.CreateSphere("balloonX", 10, 2.0, scene);
             balloonX.position = new BABYLON.Vector3(0, 5, 0);
 
             box2.actionManager = new BABYLON.ActionManager(scene);
-
-            // box2.actionManager.registerAction(new BABYLON.SetValueAction(
-            //     { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: boxtake },
-            //     box2, "scaling", new BABYLON.Vector3(2, 2, 6)));
 
             box2.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
                 { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: boxtake },
@@ -225,13 +261,6 @@
                 }
             ));
 
-            // box2.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
-            //     { trigger: BABYLON.ActionManager.OnIntersectionExitTrigger, parameter: boxtake },
-            //     function () {
-            //         onExitTrigger();
-            //     }
-            // ));
-            
             box2.actionManager.registerAction(new BABYLON.ExecuteCodeAction(
                 { trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger, parameter: boxdrop },
                 function () {
@@ -241,36 +270,20 @@
 
             function takeBox() {
                 balloonX.parent = box2;
-                balloonX.position  = new BABYLON.Vector3(0, 2, 0);
+                balloonX.position = new BABYLON.Vector3(0, 2, 0);
             }
+
             function dropBox() {
                 box2.removeChild(balloonX);
-                balloonX.position = box2.position;
+                balloonX.position.x = boxdrop.position.x;
+                balloonX.position.z = boxdrop.position.z;
+                console.log("balloonX.position" + balloonX.position);
             }
-
-            scene.registerBeforeRender(function () {
-
-                // if (box2.intersectsMesh(boxtake)) {
-                //     box2.material = matPlan;
-                //     console.log("box take");
-
-                // } else {
-                //     // box2.material.emissiveColor = new BABYLON.Color3(1, 1, 1);
-                //     // box2.material = matPlan1;
-                //     // console.log(("box take out"));
-                // }
-                // if (box2.intersectsMesh(boxdrop)) {
-                //     box2.material = matPlan1;
-                //     console.log("boxdrop");
-                // } else {
-                //     // box2.material.emissiveColor = new BABYLON.Color3(1, 1, 1);
-                //     // box2.material = matPlan;
-                //     // console.log(("box drop out"));
-
-                // }
-
-            });
-
+            function createItem(quantity){
+                array.forEach(element => {
+                    
+                });
+            }
             scene.onPointerObservable.add((pointerInfo) => {
                 switch (pointerInfo.type) {
                     case BABYLON.PointerEventTypes.POINTERDOWN:
@@ -291,6 +304,8 @@
             });
 
             advancedTexture.addControl(button1);
+            // advancedTexture.addControl(button2);
+
             return scene;
 
         };

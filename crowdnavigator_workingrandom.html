@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>Babylon.js sample code</title>
+
+    <!-- Babylon.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://assets.babylonjs.com/generated/Assets.js"></script>
+    <script src="https://cdn.babylonjs.com/ammo.js"></script>
+    <script src="https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"></script>
+    <script src="https://cdn.babylonjs.com/cannon.js"></script>
+    <script src="https://cdn.babylonjs.com/Oimo.js"></script>
+    <script src="https://cdn.babylonjs.com/earcut.min.js"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://cdn.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://cdn.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <script src="https://preview.babylonjs.com/recast.js"> </script>
+
+    <style>
+        html,
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #canvasZone {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvasZone"><canvas id="renderCanvas"></canvas></div>
+    <script>
+        var canvas = document.getElementById("renderCanvas");
+
+        var startRenderLoop = function (engine, canvas) {
+            engine.runRenderLoop(function () {
+                if (sceneToRender && sceneToRender.activeCamera) {
+                    sceneToRender.render();
+                }
+            });
+        }
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
+        var createScene = async function () {
+            // This creates a basic Babylon Scene object (non-mesh)
+            var scene = new BABYLON.Scene(engine);
+            scene.createDefaultCameraOrLight(true, true, true);
+
+            var gui = new dat.GUI();
+            gui.domElement.style.marginTop = "100px";
+            gui.domElement.id = "datGUI";
+
+
+
+            async function buildNav() {
+                await Recast();
+                console.log('recast loaded');
+                const navigationPlugin = new BABYLON.RecastJSPlugin();
+                console.log('nav plugin loaded');
+                return navigationPlugin;
+            }
+
+            const navigationPlugin = await buildNav();
+            // mixamo rig animations
+            var animations = [
+                { start: 0.0, end: 90.0, offset: 0.0, speed: 30.0 },  //"YBot_Idle"
+                { start: 91.0, end: 126.0, offset: 0.0, speed: 30.0 },    //"YBot_Walk"
+                { start: 127, end: 148, offset: 0, speed: 30.0 },     //"YBot_Run"
+                { start: 149, end: 180, offset: 0, speed: 30.0 },     //"YBot_LeftStrafeWalk"
+                { start: 181, end: 212, offset: 0, speed: 30.0 },     //"YBot_RightStrafeWalk"
+            ];
+
+            // import mesh
+            BABYLON.SceneLoader.ImportMesh("", "model/", "dummy3.babylon", scene, function (meshes, particleSystems, skeletons) {
+                const startframe = 0;
+                const endframe = 212;
+                const frameCount = (endframe - startframe) + 1;
+                var frameIndex = startframe;
+                var rabbit = meshes[0];
+                rabbit.registerInstancedBuffer("anim", 4); // 4 is the stride size eg. 4 floats here
+                rabbit.instancedBuffers.anim = new BABYLON.Vector4(0, 0, 0, 30);
+                const boneCount = rabbit.skeleton.bones.length;
+                var pxlIndex = 0;
+                const pxl = new Float32Array((boneCount + 1) * 4 * 4 * frameCount);
+
+                console.log("frameCount: ", frameCount)
+                console.log("frameIndex: ", frameIndex)
+
+                var running = false;
+                var rIndex = 0;
+
+                function runAnim(ind) {
+                    scene.beginAnimation(skeletons[0], ind, ind, true, 1.0)
+                    running = true;
+                }
+                scene.beginAnimation(skeletons[0], 0, 1, false, 1.0, () => {
+                    runAnim(frameIndex);
+                    running = true;
+                })
+
+                scene.registerBeforeRender((scene) => {
+                    if (running) {
+                        rIndex++;
+                        //console.log(rIndex)
+                        if (rIndex >= 2) {
+                            frameIndex++;
+                            // console.log(frameIndex)
+                            if (frameIndex > endframe) {
+                                console.log("Done")
+                                scene.stopAllAnimations();
+                                rabbit.skeleton.returnToRest();
+                                const boneTexture = BABYLON.RawTexture.CreateRGBATexture(pxl, (boneCount + 1) * 4, frameCount, scene, false, false, BABYLON.Texture.NEAREST_NEAREST, 1);
+                                rabbit.material = loadVATMaterial("VAT", scene, frameCount, boneTexture, new BABYLON.Texture("image/albedo.jpg"));
+                                running = false;
+                                return;
+                            }
+
+                            const skeletonMatrices = rabbit.skeleton.getTransformMatrices(rabbit);
+                            for (let i = 0; i < skeletonMatrices.length; i++) {
+                                pxl[pxlIndex + i] = skeletonMatrices[i];
+                            }
+
+                            pxlIndex += skeletonMatrices.length;
+
+                            rIndex = 0;
+                            running = false;
+                            runAnim(frameIndex);
+                        }
+                    }
+                })
+
+                // create crowd navigation
+                var crowdSize = 100;
+                var time = 0;
+
+
+                var staticMesh = createStaticMesh(scene);
+                var navmeshParameters = {
+                    cs: 0.1,
+                    ch: 0.01,
+                    walkableSlopeAngle: 0,
+                    walkableHeight: 0.0,
+                    walkableClimb: 0,
+                    walkableRadius: 1,
+                    maxEdgeLen: 12.,
+                    maxSimplificationError: 1.3,
+                    minRegionArea: 8,
+                    mergeRegionArea: 20,
+                    maxVertsPerPoly: 6,
+                    detailSampleDist: 6,
+                    detailSampleMaxError: 15,
+                    borderSize: 1,
+                    tileSize: 20
+                };
+                navigationPlugin.createNavMesh([staticMesh], navmeshParameters);
+
+                // var updateobstacle = { add: toggleObstacle(scene, navigationPlugin) };
+                // gui.add(updateobstacle, 'Obstacle');
+
+                var obj = { add: function () {toggleObstacle(scene, navigationPlugin) } };
+                gui.add(obj, 'add');
+                // nav debug mesh
+                var navmeshdebug = navigationPlugin.createDebugNavMesh(scene);
+                navmeshdebug.position = new BABYLON.Vector3(0, 0.01, 0);
+
+                var matdebug = new BABYLON.StandardMaterial('matdebug', scene);
+                matdebug.diffuseColor = new BABYLON.Color3(0.1, 0.2, 1);
+                matdebug.alpha = 0.2;
+                navmeshdebug.material = matdebug;
+
+                // crowd
+                var crowd = navigationPlugin.createCrowd(crowdSize, 0.2, scene);
+                var agentParams = {
+                    radius: 0.2,
+                    height: 0.2,
+                    maxAcceleration: 4.0,
+                    maxSpeed: 1.0,
+                    collisionQueryRange: 0.5,
+                    pathOptimizationRange: 0.0,
+                    separationWeight: 1.0
+                };
+
+                var allCubes = [];
+                // var marker = BABYLON.MeshBuilder.CreateSphere("marker", { diameter: 0.2, segments: 4 }, scene);
+
+                for (var i = 0; i < crowdSize; i++) {
+                    var manInstance = rabbit.createInstance(i);
+                    var offset = Math.random() * 100;
+                    const animation = animations[3];
+                    manInstance.instancedBuffers.anim = new BABYLON.Vector4(animation.start, animation.end, offset, animation.speed);
+                    var randomPos = navigationPlugin.getRandomPointAround(new BABYLON.Vector3(-2.0, 0.1, -1.8), 50);
+                    var transform = new BABYLON.TransformNode();
+                    manInstance.parent = transform;
+                    var agentIndex = crowd.addAgent(randomPos, agentParams, transform);
+                    allCubes.push({
+                        mesh: manInstance, transform: transform, direction: new BABYLON.Vector3(0, 0, 0), velocity: new BABYLON.Vector3(0, 0, 0), destination: randomPos,
+                        pathLine: null, timeReached: null
+                    });
+                    // needed to ensure getClosestPoint does not return origin when input pos is out of navmesh region
+                    navigationPlugin.setDefaultQueryExtent(new BABYLON.Vector3(100, 100, 100));
+                }
+                scene.onBeforeRenderObservable.add(function () {
+                    time += 0.01;
+                    fishesPickupNewDestination(navigationPlugin, crowd, allCubes, time, animations);
+                });
+
+            })
+            return scene;
+        };
+
+        function loadVATMaterial(name, scene, frameCount, boneTexture, diffuseTex) {
+            let time = 0;
+            var mat = new BABYLON.CustomMaterial(name, scene);
+            mat.diffuseTexture = diffuseTex;
+            mat.specularColor = new BABYLON.Color3(0.0, 0.0, 0.0);
+            mat.ambientColor = new BABYLON.Color3(0.05, 0.1, 0.15);
+            mat.AddUniform('singleFrameUVPer', 'float');
+            mat.AddUniform('boneSampler1', 'sampler2D');
+            mat.AddUniform('time', 'float');
+            mat.AddAttribute('anim');
+            mat.Vertex_Definitions(
+                'attribute vec4 anim;'
+                + 'mat4 readMatrixFromRawSampler1(sampler2D smp, float index, float frame, float bTW)\r\n'
+                + '{\r\n'
+                + 'float offset = index * 4.0;	\r\n'
+                + 'float dx = 1.0 / bTW;\r\n'
+                + 'float frameUV = frame*singleFrameUVPer;\r\n'
+
+                + 'vec4 m0 = texture2D(smp, vec2(dx * (offset + 0.5), frameUV));\r\n'
+                + 'vec4 m1 = texture2D(smp, vec2(dx * (offset + 1.5), frameUV));\r\n'
+                + 'vec4 m2 = texture2D(smp, vec2(dx * (offset + 2.5), frameUV));\r\n'
+                + 'vec4 m3 = texture2D(smp, vec2(dx * (offset + 3.5), frameUV));\r\n'
+
+                + 'return mat4(m0, m1, m2, m3);\r\n'
+                + '}\r\n'
+            )
+            mat.Vertex_MainBegin(
+                // get number of frames
+                'float _numOfFrames = anim.y - anim.x;\r\n'
+                // convert frame offset to secs elapsed
+                + 'float offsetCycle = anim.z / anim.w;\r\n'
+                // add offset to time to get actual time, then
+                // compute time elapsed in terms of frame cycle (30 fps/180 frames = 1/6 of an animation cycle per second)
+                // so 0.5s = 0.08333 of an animation cycle, 7.5s = 1.25 of an animation cycle etc
+                + 'float frameNum = fract((time+ offsetCycle) * anim.w / _numOfFrames);\r\n'
+                // convert to actual frame
+                + 'frameNum *= _numOfFrames;\r\n'
+                // round it to integer
+                + 'frameNum = ceil(frameNum);\r\n'
+                // add to start frame
+                + 'frameNum += anim.x;\r\n'
+            );
+            mat.Vertex_After_WorldPosComputed(
+                'mat4 influence1;\r\n'
+                + 'influence1 = readMatrixFromRawSampler1(boneSampler1, matricesIndices[0], frameNum, boneTextureWidth) * matricesWeights[0];\r\n'
+                + 'influence1 += readMatrixFromRawSampler1(boneSampler1, matricesIndices[1], frameNum, boneTextureWidth) * matricesWeights[1];\r\n'
+                + 'influence1 += readMatrixFromRawSampler1(boneSampler1, matricesIndices[2], frameNum, boneTextureWidth) * matricesWeights[2];\r\n'
+                + 'influence1 += readMatrixFromRawSampler1(boneSampler1, matricesIndices[3], frameNum, boneTextureWidth) * matricesWeights[3];\r\n'
+                + 'finalWorld = finalWorld * influence1;\r\n'
+                + 'worldPos = finalWorld * vec4(positionUpdated, 1.0);'
+            );
+            mat.onBindObservable.add(function () {
+                time += 0.01;
+                mat.getEffect().setFloat("singleFrameUVPer", 1 / frameCount);
+                mat.getEffect().setTexture('boneSampler1', boneTexture);
+                if (mat && mat.getEffect && mat.getEffect()) {
+                    mat.getEffect().setFloat('time', time);
+                }
+            });
+            return mat;
+        };
+        function getRandomPos(navigationPlugin) {
+            let radius = 30;
+            let randomAngle = Math.random() * Math.PI * 2.0;
+            let randomDist = radius * Math.random();
+            let pos = new BABYLON.Vector3(Math.cos(randomAngle) * randomDist, 0., Math.sin(randomAngle) * randomDist);
+            //marker.position.x = pos.x;
+            //marker.position.y = 2;
+            //marker.position.z = pos.z;
+            return navigationPlugin.getClosestPoint(pos);
+        }
+
+        function fishesPickupNewDestination(navigationPlugin, crowd, fishes, time, animations) {
+            let agents = crowd.getAgents();
+            for (let i = 0; i < agents.length; i++) {
+                let angleInterpolationFactor = 0.05;
+                let positionInterpolationFactor = 0.01;
+
+                let agent = fishes[i];
+                let currentDestination = agent.destination;
+                let agentPos = crowd.getAgentPosition(agents[i]);
+                let distSqr =
+                    (currentDestination.x - agentPos.x) * (currentDestination.x - agentPos.x) +
+                    (currentDestination.z - agentPos.z) * (currentDestination.z - agentPos.z);
+
+                if (time < 1.0 || distSqr > 4.0) {
+                    positionInterpolationFactor = 1;
+                }
+
+                let velocity = crowd.getAgentVelocity(agents[i]);
+
+                if (velocity.length() > 0.01) {
+                    velocity.normalize();
+                    agent.velocity = velocity;
+
+                    let dir = agent.direction;
+
+                    agent.direction = new BABYLON.Vector3(
+                        dir.x + (agent.velocity.x - dir.x) * angleInterpolationFactor,
+                        dir.y + (agent.velocity.y - dir.y) * angleInterpolationFactor,
+                        dir.z + (agent.velocity.z - dir.z) * angleInterpolationFactor);
+                    agent.direction.normalize();
+
+                    let targetAngle = Math.PI * 0.5 - Math.atan2(agent.direction.z, agent.direction.x);
+
+                    agent.mesh.rotation.y = targetAngle;
+
+                }
+
+                if (distSqr < 0.5) {
+                    if (agent.timeReached === null) {
+                        // log the time it reach dest
+                        agent.timeReached = time;
+                        // play idle anim
+                        const animation = animations[0];
+                        agent.mesh.instancedBuffers.anim = new BABYLON.Vector4(animation.start, animation.end, 0, animation.speed);
+                    } else {
+                        // check if time elapsed greater than some value
+                        if ((time - agent.timeReached) > 1.0) {
+                            // generate new path
+                            var newDestNav = getRandomPos(navigationPlugin);
+                            agent.destination = newDestNav;
+                            //console.log("newpos "+newDestNav);
+                            var pathPoints = navigationPlugin.computePath(crowd.getAgentPosition(agents[i]), newDestNav);
+                            agent.pathLine = BABYLON.MeshBuilder.CreateDashedLines("ribbon", { points: pathPoints, dashSize: 120, updatable: true, instance: agent.pathLine }, scene);
+                            crowd.agentGoto(agents[i], newDestNav);
+                            // play walk anim
+                            var offset = Math.random() * 100;
+                            const animation = animations[1];
+                            agent.mesh.instancedBuffers.anim = new BABYLON.Vector4(animation.start, animation.end, offset, animation.speed);
+                            // reset time reached
+                            agent.timeReached = null;
+                        }
+                    }
+                }
+            }
+        }
+        function createStaticMesh(scene) {
+            var ground = BABYLON.Mesh.CreateGround("ground1", 30, 30, 0, scene);
+
+            // Materials
+            var mat1 = new BABYLON.StandardMaterial('mat1', scene);
+            mat1.diffuseColor = new BABYLON.Color3(1, 1, 1);
+
+            var sphere = BABYLON.MeshBuilder.CreateSphere("sphere1", { diameter: 2, segments: 16 }, scene);
+            sphere.material = mat1;
+            sphere.position.x = -3;
+
+            var cube = BABYLON.MeshBuilder.CreateBox("cube", { size: 1, height: 3 }, scene);
+            cube.position = new BABYLON.Vector3(1, 1.5, -4);
+            //cube.material = mat2;
+            var mesh = BABYLON.Mesh.MergeMeshes([ground, sphere, cube]);
+
+            return mesh;
+        }
+
+        var obstacle = null;
+        var cylinder;
+
+        var obstacle1 = null;
+        var cylinder1;
+
+        var boxObstacle = null;
+        var box;
+
+        var toggleObstacle = function (scene, navigationPlugin) {
+            if (!obstacle) {
+
+                var position = new BABYLON.Vector3(0, 0, 0);
+                var radius = 3;
+                var height = 3;
+                obstacle = navigationPlugin.addCylinderObstacle(position, radius, height);
+                cylinder = BABYLON.MeshBuilder.CreateCylinder("cylinder", { height: height, diameter: radius * 2 }, scene);
+                cylinder.position = position
+
+                var position1 = new BABYLON.Vector3(0, 0, 2);
+
+                obstacle1 = navigationPlugin.addCylinderObstacle(position1, radius, height);
+                cylinder1 = BABYLON.MeshBuilder.CreateCylinder("cylinder", { height: height, diameter: radius * 2 }, scene);
+                cylinder1.position = position1
+
+                var matObstacle = new BABYLON.StandardMaterial('matObstacle', scene);
+                matObstacle.diffuseColor = new BABYLON.Color3(0.7, 0.3, 0.3);
+                matObstacle.wireframe = true;
+
+                cylinder.material = matObstacle;
+
+                var position2 = new BABYLON.Vector3(-3, 0, 5);
+                var extent = 5;
+                angle = Math.Pi / 4;
+
+                boxObstacle = navigationPlugin.addBoxObstacle(
+                    position2, // position
+                    extent, // extent
+                    angle// angle
+                );
+
+                box = new BABYLON.MeshBuilder.CreateBox("box", { size: extent }, scene);
+                box.position = position2;
+                box.material = matObstacle;
+
+                box.position = position2;
+                // box.scaling = new BABYLON.Vector3(2, 2, 2);
+                // box.scaling
+                box.scaling.x = 2;
+                // box.rotation.y = Math.PI / 4;
+                // staticMesh = updateStaticMesh(scene);
+
+            } else {
+                navigationPlugin.removeObstacle(obstacle);
+                cylinder.dispose();
+                obstacle = null;
+
+                navigationPlugin.removeObstacle(obstacle1);
+                cylinder1.dispose();
+                obstacle1 = null;
+
+                navigationPlugin.removeObstacle(boxObstacle);
+                box.dispose();
+                boxObstacle = null;
+            }   
+        }
+        window.initFunction = async function () {
+
+            var asyncEngineCreation = async function () {
+                try {
+                    return createDefaultEngine();
+                } catch (e) {
+                    console.log("the available createEngine function failed. Creating the default engine instead");
+                    return createDefaultEngine();
+                }
+            }
+
+            window.engine = await asyncEngineCreation();
+            if (!engine) throw 'engine should not be null.';
+            startRenderLoop(engine, canvas);
+            window.scene = await createScene();
+        };
+        initFunction().then(() => {
+            sceneToRender = scene
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+
+</html>
