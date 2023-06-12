@@ -157,23 +157,23 @@
 
            staticMesh = await updateStaticMesh(scene);
             // staticMesh = createStaticMesh(scene);
-            var sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 4, segments: 32 }, scene);
-            sphere.position = new BABYLON.Vector3(3, 4, 9);
-            BABYLON.NodeMaterial.ParseFromSnippetAsync("DGN9E2#1").then((material) => {
-                sphere.material = material;
-            });
+            // var sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 4, segments: 32 }, scene);
+            // sphere.position = new BABYLON.Vector3(3, 4, 9);
+            // BABYLON.NodeMaterial.ParseFromSnippetAsync("DGN9E2#1").then((material) => {
+            //     sphere.material = material;
+            // });
 
-            var nInstances = 100;
-            var range = 50;
+            // var nInstances = 100;
+            // var range = 50;
 
-            for (var i = 0; i < 10; i++) {
-                var inst = sphere.createInstance("s" + i);
-                inst.alwaysSelectAsActiveMesh = true;
-                inst.position.x = (Math.random() - 0.5) * range;
-                inst.position.y = (Math.random() - 0.5) * range;
-                inst.position.z = (Math.random() - 0.5) * range;
-                // arr.push(inst);
-            }
+            // for (var i = 0; i < 10; i++) {
+            //     var inst = sphere.createInstance("s" + i);
+            //     inst.alwaysSelectAsActiveMesh = true;
+            //     inst.position.x = (Math.random() - 0.5) * range;
+            //     inst.position.y = (Math.random() - 0.5) * range;
+            //     inst.position.z = (Math.random() - 0.5) * range;
+            //     // arr.push(inst);
+            // }
 
             var navmeshParameters = {
                 cs: 0.2,
@@ -233,19 +233,6 @@
                 agents.push({ idx: agentIndex, trf: transform, mesh: agentCube })
             }
 
-            for (i = 0; i < 10; i++) {
-                var width = 0.5;
-                var agentCube = BABYLON.MeshBuilder.CreateBox("cube", { size: width, height: width }, scene);
-                var matAgent = new BABYLON.StandardMaterial('mat2', scene);
-                var variation = Math.random();
-                matAgent.diffuseColor = new BABYLON.Color3(0.4 + variation * 0.6, 0.3, 1.0 - variation * 0.3);
-                agentCube.material = matAgent;
-                var randomPos = navigationPlugin.getRandomPointAround(new BABYLON.Vector3(2.0, 0.1, -1.8), 5);
-                var transform = new BABYLON.TransformNode();
-                agentCube.parent = transform;
-                var agentIndex = crowd.addAgent(randomPos, agentParams, transform);
-                agents.push({ idx: agentIndex, trf: transform, mesh: agentCube })
-            }
             var startingPoint;
             var pathLine;
             var getGroundPosition = function () {
@@ -392,6 +379,7 @@
             for (var i = 0; i < 100; i++) {
                 var newmesh = new BABYLON.MeshBuilder.CreateBox("box" + (i + 6), { size: 2 }, scene);
                 // newmesh.alwaysSelectAsActiveMesh = true;
+                newmesh.scaling.x = 4;
                 var max = 50;
                 var min = -max;
                 newmesh.position.x = Math.floor(Math.random() * (max - min)) + min;

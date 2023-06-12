@@ -203,7 +203,6 @@
             // });
             input.onBlurObservable.add(() => {
                 console.log("Input blurred:", input.text);
-
             });
 
             const box2 = BABYLON.MeshBuilder.CreateBox("box", {});
@@ -250,7 +249,9 @@
             })
 
             var balloonX = BABYLON.Mesh.CreateSphere("balloonX", 10, 2.0, scene);
-            balloonX.position = new BABYLON.Vector3(0, 5, 0);
+            // balloonX.position = new BABYLON.Vector3(0, 5, 0);
+            balloonX.position.x = 10;
+            balloonX.position.y = 2;
 
             box2.actionManager = new BABYLON.ActionManager(scene);
 

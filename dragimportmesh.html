@@ -138,7 +138,7 @@
 
             // Load in a full screen GUI from the snippet server
             let advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("GUI", true, scene);
-            let loadedGUI = await advancedTexture.parseFromSnippetAsync("L91IFF#72");
+            let loadedGUI = await advancedTexture.parseFromSnippetAsync("L91IFF#80");
             advancedTexture.idealWidth = 1920;
             advancedTexture.idealHeight = 1080;
 
@@ -147,8 +147,8 @@
                 "Properties": advancedTexture.getControlByName("Properties")
             };
             tabContents["Menu"].isVisible = true;
-            tabContents["Menu"].left = "%";
-            tabContents["Menu"].top = "%";
+            tabContents["Menu"].left = "0%";
+            tabContents["Menu"].top = "0%";
 
             tabContents["Properties"].isVisible = false;
 
@@ -240,8 +240,8 @@
                     currentMesh.position.y = 0;
 
                     tabContents["Properties"].isVisible = true;
-                    tabContents["Properties"].left = "35%";
-                    tabContents["Properties"].top = "-30%";
+                    tabContents["Properties"].right = "0%";
+                    tabContents["Properties"].top = "10%";
 
                     txtXposition.text = currentMesh.position.x + "   ";
                     txtYposition.text = currentMesh.position.y + "   ";
